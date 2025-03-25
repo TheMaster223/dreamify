@@ -15,6 +15,13 @@ const defaultSongs = [
         'Dreamybull, Bill Withers, Grover Washington, Jr.',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true'
+    ),
+    new Song(
+        'default-2',
+        'E-GIRLS ARE RUINING MY LIFE!',
+        'CORPSE, Savage Ga$p',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default2.mp3?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default2.jpg?raw=true'
     )
 ];
 
