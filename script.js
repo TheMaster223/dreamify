@@ -43,6 +43,12 @@ const defaultSongs = [
         'Animan Studios, Mustard, Roddy Ricch',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default5.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default5.jpg?raw=true'
+    ),
+        'default6',
+        'VULTURES 3 Leak',
+        'Joe Miggle, ¥$',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default6.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default6.jpg?raw=true'
     )
 ];
 
