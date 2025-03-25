@@ -77,6 +77,8 @@ class MusicPlayer {
         this.playlistList = document.getElementById('playlistList');
         this.currentPlaylistName = document.getElementById('currentPlaylistName');
         this.volumeSlider = document.getElementById('volumeSlider');
+        this.volumeSlider.value = 50; // Set default volume to 50
+        this.volumeSlider.style.setProperty('--value', this.volumeSlider.value);
         this.songSearchContainer = document.getElementById('songSearchContainer');
         this.songSearch = document.getElementById('songSearch');
         this.clearSongSearch = document.getElementById('clearSongSearch');
