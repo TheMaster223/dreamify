@@ -322,6 +322,9 @@ class MusicPlayer {
         console.log('Loading songs for playlist:', playlistId); // Debug
         this.currentPlaylistId = playlistId;
 
+        // Update active state in the sidebar
+        this.updatePlaylistList();
+
         if (playlistId === 'home') {
             this.songs = defaultSongs;
             this.currentPlaylistName.textContent = homePlaylist.name;
@@ -454,10 +457,9 @@ class MusicPlayer {
         console.log('Updating playlist list'); // Debug
         this.playlistList.innerHTML = '';
         this.playlists.forEach(playlist => {
+            if (playlist.id === 'home') return; // Skip Home since it's handled separately
             const li = document.createElement('li');
-            if (playlist.id === 'home') {
-                li.classList.add('home-playlist');
-            }
+            li.className = this.currentPlaylistId === playlist.id ? 'active' : '';
             const span = document.createElement('span');
             span.textContent = playlist.name;
             span.addEventListener('click', () => {
@@ -486,6 +488,12 @@ class MusicPlayer {
         });
         if (this.currentPlaylistId && this.currentPlaylistId !== 'home') {
             document.getElementById('playlistAddSelect').value = this.currentPlaylistId;
+        }
+
+        // Update Home nav item active state
+        const homeNavItem = document.getElementById('homeNavItem');
+        if (homeNavItem) {
+            homeNavItem.className = 'nav-item home-playlist' + (this.currentPlaylistId === 'home' ? ' active' : '');
         }
     }
 
@@ -733,6 +741,7 @@ try {
     const cancelPlaylist = document.getElementById('cancelPlaylist');
     const resetAllBtn = document.getElementById('resetAllBtn');
     const viewStorageBtn = document.getElementById('viewStorageBtn');
+    const homeNavItem = document.getElementById('homeNavItem');
 
     console.log('Event listener DOM elements:', { // Debug
         songForm,
@@ -744,7 +753,8 @@ try {
         submitPlaylist,
         cancelPlaylist,
         resetAllBtn,
-        viewStorageBtn
+        viewStorageBtn,
+        homeNavItem
     });
 
     // Event listeners
@@ -825,6 +835,13 @@ try {
         viewStorageBtn.addEventListener('click', () => {
             console.log('View Storage button clicked'); // Debug
             player.viewStorage();
+        });
+    }
+
+    if (homeNavItem) {
+        homeNavItem.addEventListener('click', () => {
+            console.log('Home navigation item clicked'); // Debug
+            player.loadSongsForPlaylist('home');
         });
     }
 
