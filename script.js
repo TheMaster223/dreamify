@@ -15,20 +15,6 @@ const defaultSongs = [
         'Dreamybull, Bill Withers, Grover Washington, Jr.',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true'
-    ),
-    new Song(
-        'default-2',
-        'Sample Song 2',
-        'Sample Artist 2',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        'https://via.placeholder.com/150?text=Album+Art+2'
-    ),
-    new Song(
-        'default-3',
-        'Sample Song 3',
-        'Sample Artist 3',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        'https://via.placeholder.com/150?text=Album+Art+3'
     )
 ];
 
