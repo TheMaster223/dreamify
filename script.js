@@ -95,15 +95,20 @@ class MusicPlayer {
         });
 
         this.db = null;
-        this.initDB().then(() => {
-            console.log('IndexedDB initialized'); // Debug
-            this.loadPlaylistsFromDB();
-        }).catch(err => {
-            console.error('Failed to initialize IndexedDB:', err);
-        });
-
-        this.setupEventListeners();
-        this.loadSongsForPlaylist('home');
+        this.initDB()
+            .then(() => {
+                console.log('IndexedDB initialized'); // Debug
+                return this.loadPlaylistsFromDB();
+            })
+            .then(() => {
+                console.log('Playlists loaded, setting up event listeners'); // Debug
+                this.setupEventListeners();
+                this.loadSongsForPlaylist('home');
+            })
+            .catch(err => {
+                console.error('Failed to initialize app:', err);
+                alert('Failed to initialize the music player. Please check the console for details.');
+            });
     }
 
     initDB() {
@@ -307,7 +312,12 @@ class MusicPlayer {
 
     loadPlaylistsFromDB() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db  store = transaction.objectStore('playlists');
+            if (!this.db) {
+                reject(new Error('Database not initialized'));
+                return;
+            }
+            const transaction = this.db.transaction(['playlists'], 'readonly');
+            const store = transaction.objectStore('playlists');
             const request = store.getAll();
 
             request.onsuccess = () => {
