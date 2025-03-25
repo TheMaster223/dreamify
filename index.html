@@ -5,20 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Player</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Import Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">
-                <h2>Music Player</h2>
+                <h2>Navigation</h2>
             </div>
-            <button id="createPlaylistBtn">Create Playlist</button>
-            <button id="addSongBtn">Add Song</button>
-            <button id="viewStorageBtn">View Storage</button>
-            <button id="resetAllBtn">Reset All</button>
+            <!-- Home Playlist (Standalone) -->
+            <div class="nav-item home-playlist" id="homeNavItem">
+                <span>Home</span>
+            </div>
+            <!-- Core Action Buttons -->
+            <button id="createPlaylistBtn" class="action-btn">
+                <span class="icon">➕</span> Create Playlist
+            </button>
+            <button id="addSongBtn" class="action-btn">
+                <span class="icon">🎵</span> Add Song
+            </button>
+            <!-- Playlists Section -->
             <h3>Playlists</h3>
             <ul id="playlistList"></ul>
+            <!-- Settings Section (Less Prominent) -->
+            <h3 class="settings-title">Settings</h3>
+            <button id="viewStorageBtn" class="settings-btn">
+                <span class="icon">📊</span> View Storage
+            </button>
+            <button id="resetAllBtn" class="settings-btn">
+                <span class="icon">🔄</span> Reset All
+            </button>
         </div>
 
         <!-- Main Content -->
