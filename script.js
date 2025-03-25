@@ -731,37 +731,53 @@ try {
     console.log('Player initialized'); // Debug
 
     // DOM elements for event listeners
+    const songModal = document.getElementById('songModal');
     const songForm = document.getElementById('songForm');
     const addSongBtn = document.getElementById('addSongBtn');
     const submitSong = document.getElementById('submitSong');
-    const cancelForm = document.getElementById('cancelForm');
+    const cancelSongForm = document.getElementById('cancelSongForm');
+    const playlistModal = document.getElementById('playlistModal');
     const createPlaylistForm = document.getElementById('createPlaylistForm');
     const createPlaylistBtn = document.getElementById('createPlaylistBtn');
     const submitPlaylist = document.getElementById('submitPlaylist');
-    const cancelPlaylist = document.getElementById('cancelPlaylist');
+    const cancelPlaylistForm = document.getElementById('cancelPlaylistForm');
     const resetAllBtn = document.getElementById('resetAllBtn');
     const viewStorageBtn = document.getElementById('viewStorageBtn');
     const homeNavItem = document.getElementById('homeNavItem');
 
     console.log('Event listener DOM elements:', { // Debug
+        songModal,
         songForm,
         addSongBtn,
         submitSong,
-        cancelForm,
+        cancelSongForm,
+        playlistModal,
         createPlaylistForm,
         createPlaylistBtn,
         submitPlaylist,
-        cancelPlaylist,
+        cancelPlaylistForm,
         resetAllBtn,
         viewStorageBtn,
         homeNavItem
     });
 
-    // Event listeners
+    // Function to close modals
+    function closeModal(modal) {
+        modal.classList.remove('visible');
+        modal.classList.add('hidden');
+    }
+
+    // Function to open modals
+    function openModal(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('visible');
+    }
+
+    // Event listeners for modals
     if (addSongBtn) {
         addSongBtn.addEventListener('click', () => {
             console.log('Add Song button clicked'); // Debug
-            songForm.classList.remove('hidden');
+            openModal(songModal);
         });
     }
 
@@ -777,7 +793,7 @@ try {
             if (title && artist && audioFile && albumArt && playlistId) {
                 const song = new Song(null, title, artist, audioFile, albumArt);
                 player.addSong(song, playlistId);
-                songForm.classList.add('hidden');
+                closeModal(songModal);
                 clearSongForm();
             } else {
                 alert('Please fill out all fields and select a playlist.');
@@ -785,10 +801,10 @@ try {
         });
     }
 
-    if (cancelForm) {
-        cancelForm.addEventListener('click', () => {
+    if (cancelSongForm) {
+        cancelSongForm.addEventListener('click', () => {
             console.log('Cancel Song Form button clicked'); // Debug
-            songForm.classList.add('hidden');
+            closeModal(songModal);
             clearSongForm();
         });
     }
@@ -796,7 +812,7 @@ try {
     if (createPlaylistBtn) {
         createPlaylistBtn.addEventListener('click', () => {
             console.log('Create Playlist button clicked'); // Debug
-            createPlaylistForm.classList.remove('hidden');
+            openModal(playlistModal);
         });
     }
 
@@ -806,7 +822,7 @@ try {
             const name = document.getElementById('playlistName').value;
             if (name) {
                 player.addPlaylist(name);
-                createPlaylistForm.classList.add('hidden');
+                closeModal(playlistModal);
                 clearPlaylistForm();
             } else {
                 alert('Please enter a playlist name.');
@@ -814,10 +830,10 @@ try {
         });
     }
 
-    if (cancelPlaylist) {
-        cancelPlaylist.addEventListener('click', () => {
+    if (cancelPlaylistForm) {
+        cancelPlaylistForm.addEventListener('click', () => {
             console.log('Cancel Playlist Form button clicked'); // Debug
-            createPlaylistForm.classList.add('hidden');
+            closeModal(playlistModal);
             clearPlaylistForm();
         });
     }
@@ -844,6 +860,33 @@ try {
             player.loadSongsForPlaylist('home');
         });
     }
+
+    // Close modals when clicking outside
+    [songModal, playlistModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                console.log('Clicked outside modal, closing'); // Debug
+                closeModal(modal);
+                if (modal === songModal) clearSongForm();
+                if (modal === playlistModal) clearPlaylistForm();
+            }
+        });
+    });
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            console.log('Escape key pressed, closing modals'); // Debug
+            if (!songModal.classList.contains('hidden')) {
+                closeModal(songModal);
+                clearSongForm();
+            }
+            if (!playlistModal.classList.contains('hidden')) {
+                closeModal(playlistModal);
+                clearPlaylistForm();
+            }
+        }
+    });
 
     function clearSongForm() {
         console.log('Clearing song form'); // Debug

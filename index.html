@@ -46,26 +46,36 @@
                 <h1 id="currentPlaylistName">No Playlist</h1>
             </div>
 
-            <!-- Song Form (Hidden by Default) -->
-            <div class="song-form hidden" id="songForm">
-                <input type="text" id="songTitle" placeholder="Song Title">
-                <input type="text" id="artist" placeholder="Artist">
-                <input type="file" id="audioFile" accept="audio/*">
-                <input type="file" id="albumArt" accept="image/*">
-                <select id="playlistAddSelect"></select>
-                <button id="submitSong">Add Song</button>
-                <button id="cancelForm">Cancel</button>
-            </div>
-
-            <!-- Create Playlist Form (Hidden by Default) -->
-            <div class="song-form hidden" id="createPlaylistForm">
-                <input type="text" id="playlistName" placeholder="Playlist Name">
-                <button id="submitPlaylist">Create</button>
-                <button id="cancelPlaylist">Cancel</button>
-            </div>
-
             <!-- Song List -->
             <div class="playlist" id="songList"></div>
+        </div>
+    </div>
+
+    <!-- Add Song Modal -->
+    <div class="modal hidden" id="songModal">
+        <div class="modal-content song-form" id="songForm">
+            <h2>Add a New Song</h2>
+            <input type="text" id="songTitle" placeholder="Song Title">
+            <input type="text" id="artist" placeholder="Artist">
+            <input type="file" id="audioFile" accept="audio/*">
+            <input type="file" id="albumArt" accept="image/*">
+            <select id="playlistAddSelect"></select>
+            <div class="modal-actions">
+                <button id="submitSong">Add Song</button>
+                <button id="cancelSongForm">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div class="modal hidden" id="playlistModal">
+        <div class="modal-content song-form" id="createPlaylistForm">
+            <h2>Create a New Playlist</h2>
+            <input type="text" id="playlistName" placeholder="Playlist Name">
+            <div class="modal-actions">
+                <button id="submitPlaylist">Create</button>
+                <button id="cancelPlaylistForm">Cancel</button>
+            </div>
         </div>
     </div>
 
