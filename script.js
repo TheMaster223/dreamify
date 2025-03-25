@@ -10,18 +10,25 @@ class Song {
 
 const defaultSongs = [
     new Song(
-        'default-1',
+        'default1',
         'Just the Two of Us',
         'Dreamybull, Bill Withers, Grover Washington, Jr.',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true'
     ),
     new Song(
-        'default-2',
+        'default2',
         'E-GIRLS ARE RUINING MY LIFE!',
         'CORPSE, Savage Ga$p',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default2.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default2.jpg?raw=true'
+    )
+    new Song(
+        'default3',
+        'Whiskey',
+        'Morgan Wallen, Luke Combs, Logan Allen Richardson',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default3.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default3.jpg?raw=true'
     )
 ];
 
