@@ -15,10 +15,10 @@ class Song {
 const defaultSongs = [
     new Song(
         'default-1',
-        'Sample Song 1',
-        'Sample Artist 1',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        'https://via.placeholder.com/150?text=Album+Art+1'
+        'Just the Two of Us',
+        'Dreamybull, Bill Withers, Grover Washington, Jr.',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true'
     ),
     new Song(
         'default-2',
