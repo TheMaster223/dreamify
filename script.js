@@ -33,7 +33,7 @@ const defaultSongs = [
     new Song(
         'default4',
         'Deliway',
-        'Tobelious, Joe Miggle, Lizzy, Kanye West',
+        'Tobelious, Joe Miggle, Alejandro Carapia, Lizzy, Kanye West',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default4.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default4.jpg?raw=true'
     )
