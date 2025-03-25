@@ -22,7 +22,7 @@ const defaultSongs = [
         'default-1',
         'Sample Song 1',
         'Sample Artist 1',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3', // Real audio file
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true', // Real audio file
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true' // Placeholder image
     ),
     new Song(
