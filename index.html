@@ -15,12 +15,6 @@
             <div class="logo">
                 <h2>Navigation</h2>
             </div>
-            <!-- Search Bar for Playlists -->
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="playlistSearch" placeholder="Search Playlists">
-                <button class="clear-search hidden" id="clearPlaylistSearch">✖</button>
-            </div>
             <!-- Home Playlist (Standalone) -->
             <div class="nav-item home-playlist" id="homeNavItem">
                 <span>Home</span>
@@ -50,10 +44,10 @@
             <!-- Header -->
             <div class="header">
                 <h1 id="currentPlaylistName">No Playlist</h1>
-                <!-- Search Bar for Songs -->
-                <div class="search-container">
+                <!-- Search Bar for Songs (Only on Home) -->
+                <div class="search-container hidden" id="songSearchContainer">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="songSearch" placeholder="Search Songs">
+                    <input type="text" id="songSearch" placeholder="Search Songs in Home">
                     <button class="clear-search hidden" id="clearSongSearch">✖</button>
                 </div>
             </div>

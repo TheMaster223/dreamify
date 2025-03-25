@@ -48,9 +48,8 @@ class MusicPlayer {
     constructor() {
         console.log('MusicPlayer constructor called'); // Debug
         this.songs = [];
-        this.allSongs = []; // Store all songs for the current playlist before filtering
+        this.allSongs = []; // Store all songs for the Home playlist before filtering
         this.playlists = [];
-        this.allPlaylists = []; // Store all playlists before filtering
         this.currentPlaylistId = 'home';
         this.currentIndex = -1;
         this.currentSong = null; // Track the currently playing song
@@ -72,10 +71,9 @@ class MusicPlayer {
         this.playlistList = document.getElementById('playlistList');
         this.currentPlaylistName = document.getElementById('currentPlaylistName');
         this.volumeSlider = document.getElementById('volumeSlider');
+        this.songSearchContainer = document.getElementById('songSearchContainer');
         this.songSearch = document.getElementById('songSearch');
         this.clearSongSearch = document.getElementById('clearSongSearch');
-        this.playlistSearch = document.getElementById('playlistSearch');
-        this.clearPlaylistSearch = document.getElementById('clearPlaylistSearch');
 
         console.log('DOM elements:', { // Debug
             songList: this.songList,
@@ -91,10 +89,9 @@ class MusicPlayer {
             playlistList: this.playlistList,
             currentPlaylistName: this.currentPlaylistName,
             volumeSlider: this.volumeSlider,
+            songSearchContainer: this.songSearchContainer,
             songSearch: this.songSearch,
-            clearSongSearch: this.clearSongSearch,
-            playlistSearch: this.playlistSearch,
-            clearPlaylistSearch: this.clearPlaylistSearch
+            clearSongSearch: this.clearSongSearch
         });
 
         this.db = null;
@@ -296,13 +293,10 @@ class MusicPlayer {
                 })
             ]).then(() => {
                 this.playlists = [homePlaylist];
-                this.allPlaylists = [homePlaylist];
                 this.currentPlaylistId = 'home';
                 this.currentIndex = -1;
                 this.updatePlaylistList();
                 this.loadSongsForPlaylist('home');
-                this.playlistSearch.value = '';
-                this.clearPlaylistSearch.classList.remove('visible');
                 resolve();
             }).catch(err => {
                 console.error('Error resetting DB:', err);
@@ -313,13 +307,11 @@ class MusicPlayer {
 
     loadPlaylistsFromDB() {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['playlists'], 'readonly');
-            const store = transaction.objectStore('playlists');
+            const transaction = this.db  store = transaction.objectStore('playlists');
             const request = store.getAll();
 
             request.onsuccess = () => {
                 this.playlists = [homePlaylist, ...request.result];
-                this.allPlaylists = [...this.playlists]; // Store a copy for filtering
                 console.log('Playlists loaded from DB:', this.playlists);
                 this.updatePlaylistList();
                 this.loadSongsForPlaylist(this.currentPlaylistId);
@@ -339,9 +331,15 @@ class MusicPlayer {
         // Update active state in the sidebar
         this.updatePlaylistList();
 
-        // Clear song search when switching playlists
-        this.songSearch.value = '';
-        this.clearSongSearch.classList.remove('visible');
+        // Show/hide the search bar based on the current playlist
+        if (this.songSearchContainer) {
+            this.songSearchContainer.classList.toggle('hidden', playlistId !== 'home');
+            if (playlistId !== 'home') {
+                this.songSearch.value = '';
+                this.clearSongSearch.classList.remove('visible');
+                this.filterSongs();
+            }
+        }
 
         if (playlistId === 'home') {
             this.songs = defaultSongs;
@@ -485,24 +483,10 @@ class MusicPlayer {
                 this.filterSongs();
             });
         }
-        if (this.playlistSearch) {
-            this.playlistSearch.addEventListener('input', () => {
-                console.log('Playlist search input:', this.playlistSearch.value); // Debug
-                this.filterPlaylists();
-                this.clearPlaylistSearch.classList.toggle('visible', this.playlistSearch.value.length > 0);
-            });
-        }
-        if (this.clearPlaylistSearch) {
-            this.clearPlaylistSearch.addEventListener('click', () => {
-                console.log('Clear playlist search clicked'); // Debug
-                this.playlistSearch.value = '';
-                this.clearPlaylistSearch.classList.remove('visible');
-                this.filterPlaylists();
-            });
-        }
     }
 
     filterSongs() {
+        if (this.currentPlaylistId !== 'home') return; // Only filter on the Home playlist
         const query = this.songSearch.value.trim().toLowerCase();
         if (query === '') {
             this.songs = [...this.allSongs];
@@ -513,18 +497,6 @@ class MusicPlayer {
             );
         }
         this.renderSongList();
-    }
-
-    filterPlaylists() {
-        const query = this.playlistSearch.value.trim().toLowerCase();
-        if (query === '') {
-            this.playlists = [...this.allPlaylists];
-        } else {
-            this.playlists = this.allPlaylists.filter(playlist =>
-                playlist.name.toLowerCase().includes(query)
-            );
-        }
-        this.updatePlaylistList();
     }
 
     setVolume() {
@@ -595,7 +567,7 @@ class MusicPlayer {
                 if (this.currentPlaylistId === playlistId) {
                     this.songs.push(song);
                     this.allSongs.push(song); // Update the unfiltered list
-                    this.filterSongs(); // Reapply the search filter
+                    this.renderSongList();
                     if (this.currentIndex === -1) {
                         this.currentIndex = 0;
                         this.loadSong();
@@ -651,8 +623,7 @@ class MusicPlayer {
         this.addPlaylistToDB(name).then(id => {
             const newPlaylist = { id, name, songIds: [] };
             this.playlists.push(newPlaylist);
-            this.allPlaylists.push(newPlaylist); // Update the unfiltered list
-            this.filterPlaylists(); // Reapply the search filter
+            this.updatePlaylistList();
             this.currentPlaylistId = id;
             this.loadSongsForPlaylist(id);
         }).catch(err => console.error('Error adding playlist:', err));
@@ -668,16 +639,12 @@ class MusicPlayer {
             const index = this.playlists.findIndex(p => p.id === id);
             if (index !== -1) {
                 this.playlists.splice(index, 1);
-                const allIndex = this.allPlaylists.findIndex(p => p.id === id);
-                if (allIndex !== -1) {
-                    this.allPlaylists.splice(allIndex, 1);
-                }
                 console.log('Playlist removed from array:', id);
                 if (this.currentPlaylistId === id) {
                     this.currentPlaylistId = 'home';
                     this.loadSongsForPlaylist(this.currentPlaylistId);
                 }
-                this.filterPlaylists(); // Reapply the search filter
+                this.updatePlaylistList();
             } else {
                 console.error('Playlist not found in array:', id);
             }
