@@ -25,6 +25,31 @@ body {
     height: 100%;
 }
 
+/* Custom Scrollbar for Sidebar (Webkit) */
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #535353;
+    border-radius: 4px;
+    visibility: hidden;
+}
+
+.sidebar:hover::-webkit-scrollbar-thumb {
+    visibility: visible;
+}
+
+/* Custom Scrollbar for Sidebar (Firefox) */
+.sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: #535353 transparent;
+}
+
 .sidebar .logo {
     margin-bottom: 20px;
 }
@@ -118,6 +143,31 @@ body {
     overflow-y: auto;
 }
 
+/* Custom Scrollbar for Main Content (Webkit) */
+.main::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.main::-webkit-scrollbar-thumb {
+    background: #535353;
+    border-radius: 4px;
+    visibility: hidden;
+}
+
+.main:hover::-webkit-scrollbar-thumb {
+    visibility: visible;
+}
+
+/* Custom Scrollbar for Main Content (Firefox) */
+.main {
+    scrollbar-width: thin;
+    scrollbar-color: #535353 transparent;
+}
+
 .header {
     margin-bottom: 20px;
 }
@@ -163,6 +213,31 @@ body {
 .playlist {
     flex: 1;
     overflow-y: auto;
+}
+
+/* Custom Scrollbar for Playlist (Webkit) */
+.playlist::-webkit-scrollbar {
+    width: 8px;
+}
+
+.playlist::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.playlist::-webkit-scrollbar-thumb {
+    background: #535353;
+    border-radius: 4px;
+    visibility: hidden;
+}
+
+.playlist:hover::-webkit-scrollbar-thumb {
+    visibility: visible;
+}
+
+/* Custom Scrollbar for Playlist (Firefox) */
+.playlist {
+    scrollbar-width: thin;
+    scrollbar-color: #535353 transparent;
 }
 
 .song-item {
