@@ -55,6 +55,9 @@ body {
     font-size: 20px;
     font-weight: 700;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar h3 {
@@ -240,6 +243,9 @@ body {
 
 .sidebar li span {
     flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar li button.remove-btn {
@@ -300,6 +306,9 @@ body {
     font-weight: 700;
     color: #fff;
     margin-bottom: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .modal {
@@ -343,6 +352,9 @@ body {
     font-weight: 600;
     color: #fff;
     margin-bottom: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .song-form input,
@@ -445,18 +457,25 @@ body {
 
 .song-item div {
     flex: 1;
+    overflow: hidden;
 }
 
 .song-item h3 {
     font-size: 16px;
     font-weight: 500;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .song-item p {
     font-size: 14px;
     font-weight: 400;
     color: #b3b3b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .song-item .remove-btn {
@@ -510,16 +529,27 @@ body {
     border-radius: 4px;
 }
 
+.current-song div {
+    flex: 1;
+    overflow: hidden;
+}
+
 .current-song h2 {
     font-size: 16px;
     font-weight: 500;
     color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .current-song p {
     font-size: 14px;
     font-weight: 400;
     color: #b3b3b3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player-controls {
@@ -653,25 +683,24 @@ body {
     background-repeat: no-repeat;
 }
 
-/* Mobile-Specific Styles */
 @media (max-width: 768px) {
     body {
-        overflow-y: auto; /* Allow scrolling on mobile */
+        overflow-y: auto;
     }
 
     .container {
-        flex-direction: column; /* Stack sidebar and main content vertically */
-        height: auto; /* Allow container to grow with content */
+        flex-direction: column;
+        height: auto;
     }
 
     .sidebar {
-        width: 100%; /* Full width on mobile */
+        width: 100%;
         padding: 16px;
-        height: auto; /* Allow sidebar to grow with content */
+        height: auto;
     }
 
     .sidebar .logo h2 {
-        font-size: 18px; /* Slightly smaller logo text */
+        font-size: 18px;
     }
 
     .sidebar h3 {
@@ -702,7 +731,7 @@ body {
 
     .main {
         padding: 16px;
-        flex: none; /* Remove flex growth to allow natural height */
+        flex: none;
     }
 
     .header h1 {
@@ -750,63 +779,89 @@ body {
     }
 
     .player {
-        height: 70px; /* Smaller player height */
+        height: 80px; /* Slightly taller to accommodate volume bar */
         padding: 0 16px;
     }
 
     .player-content {
-        flex-wrap: wrap; /* Allow wrapping if needed */
+        flex-wrap: nowrap; /* Prevent wrapping to keep layout in one row */
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px; /* Add small gap between sections */
     }
 
     .current-song {
-        width: 100%;
-        margin-bottom: 8px;
+        width: auto;
+        flex: 0 1 auto; /* Allow shrinking but not growing */
+        margin-bottom: 0;
+        align-items: center;
+        overflow: hidden;
     }
 
     .current-song img {
-        width: 40px;
-        height: 40px;
-        margin-right: 12px;
+        width: 36px;
+        height: 36px;
+        margin-right: 8px;
+    }
+
+    .current-song div {
+        flex: 1;
+        overflow: hidden;
     }
 
     .current-song h2 {
-        font-size: 14px;
-    }
-
-    .current-song p {
         font-size: 12px;
     }
 
+    .current-song p {
+        font-size: 10px;
+    }
+
     .player-controls {
-        flex: none;
-        width: 100%;
+        flex: 1;
+        width: auto;
+        display: flex;
+        flex-direction: column; /* Stack controls and progress vertically */
+        align-items: center;
+        gap: 4px;
     }
 
     .controls {
-        gap: 16px;
-        margin-bottom: 8px;
-    }
-
-    .controls button {
-        font-size: 20px;
-    }
-
-    .progress {
-        max-width: 100%;
-    }
-
-    .time {
-        font-size: 10px;
+        gap: 12px;
         margin-bottom: 4px;
     }
 
+    .controls button {
+        font-size: 18px;
+    }
+
+    .progress {
+        max-width: 100px; /* Smaller progress bar to fit */
+    }
+
+    .time {
+        font-size: 8px;
+        margin-bottom: 2px;
+    }
+
     .volume {
-        display: none; /* Hide volume control on mobile to save space */
+        display: flex; /* Make volume bar visible */
+        flex: 0 0 auto; /* Prevent growing, only take needed space */
+        width: auto;
+    }
+
+    .volume-icon {
+        font-size: 14px;
+        margin-right: 6px;
+    }
+
+    #volumeSlider {
+        width: 60px; /* Smaller volume slider for mobile */
     }
 
     .modal-content {
         padding: 16px;
-        max-width: 90%; /* Ensure modal fits within screen */
+        max-width: 90%;
     }
 
     .modal-content h2 {
