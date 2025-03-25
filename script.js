@@ -36,6 +36,13 @@ const defaultSongs = [
         'Tobelious, Joe Miggle',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default4.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default4.jpg?raw=true'
+    ),
+    new Song(
+        'default5',
+        "Ballin'",
+        'Animan Studios, Mustard, Roddy Ricch',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default5.mp3?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default5.jpg?raw=true'
     )
 ];
 
