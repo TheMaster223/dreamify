@@ -29,6 +29,13 @@ const defaultSongs = [
         'Morgan Wallen, Luke Combs, Logan Allen Richardson',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default3.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default3.jpg?raw=true'
+    ),
+    new Song(
+        'default4',
+        'Deliway',
+        'Tobelious, Joe Miggle, Lizzy, Kanye West',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default4.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default4.jpg?raw=true'
     )
 ];
 
