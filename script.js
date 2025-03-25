@@ -1,0 +1,725 @@
+console.log('Script loaded'); // Debug: Confirm script is running
+
+// Placeholder function to create a dummy blob (still included for reference, but we won't use it for default songs)
+function createDummyBlob(type, content) {
+    return new Blob([content], { type });
+}
+
+// Define Song class
+class Song {
+    constructor(id, title, artist, audioUrl, artUrl) {
+        this.id = id;
+        this.title = title;
+        this.artist = artist;
+        this.audioUrl = audioUrl; // Now using URLs instead of blobs
+        this.artUrl = artUrl;
+    }
+}
+
+// Default songs with real audio and image URLs
+const defaultSongs = [
+    new Song(
+        'default-1',
+        'Sample Song 1',
+        'Sample Artist 1',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Real audio file
+        'https://via.placeholder.com/150?text=Album+Art+1' // Placeholder image
+    ),
+    new Song(
+        'default-2',
+        'Sample Song 2',
+        'Sample Artist 2',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        'https://via.placeholder.com/150?text=Album+Art+2'
+    ),
+    new Song(
+        'default-3',
+        'Sample Song 3',
+        'Sample Artist 3',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        'https://via.placeholder.com/150?text=Album+Art+3'
+    )
+];
+
+// Default "Home" playlist (not stored in the database)
+const homePlaylist = {
+    id: 'home',
+    name: 'Home',
+    songIds: defaultSongs.map(song => song.id),
+    isDefault: true
+};
+
+class MusicPlayer {
+    constructor() {
+        console.log('MusicPlayer constructor called'); // Debug
+        this.songs = [];
+        this.playlists = [];
+        this.currentPlaylistId = 'home';
+        this.currentIndex = -1;
+        this.audio = document.getElementById('audioPlayer');
+        this.isPlaying = false;
+
+        // DOM elements
+        this.songList = document.getElementById('songList');
+        this.currentArt = document.getElementById('currentArt');
+        this.currentTitle = document.getElementById('currentTitle');
+        this.currentArtist = document.getElementById('currentArtist');
+        this.playPauseBtn = document.getElementById('playPauseBtn');
+        this.prevBtn = document.getElementById('prevBtn');
+        this.nextBtn = document.getElementById('nextBtn');
+        this.progressBar = document.getElementById('progressBar');
+        this.currentTime = document.getElementById('currentTime');
+        this.duration = document.getElementById('duration');
+        this.playlistList = document.getElementById('playlistList');
+        this.currentPlaylistName = document.getElementById('currentPlaylistName');
+        this.volumeSlider = document.getElementById('volumeSlider');
+
+        console.log('DOM elements:', { // Debug
+            songList: this.songList,
+            currentArt: this.currentArt,
+            currentTitle: this.currentTitle,
+            currentArtist: this.currentArtist,
+            playPauseBtn: this.playPauseBtn,
+            prevBtn: this.prevBtn,
+            nextBtn: this.nextBtn,
+            progressBar: this.progressBar,
+            currentTime: this.currentTime,
+            duration: this.duration,
+            playlistList: this.playlistList,
+            currentPlaylistName: this.currentPlaylistName,
+            volumeSlider: this.volumeSlider
+        });
+
+        this.db = null;
+        this.initDB().then(() => {
+            console.log('IndexedDB initialized'); // Debug
+            this.loadPlaylistsFromDB();
+        }).catch(err => {
+            console.error('Failed to initialize IndexedDB:', err);
+        });
+
+        this.setupEventListeners();
+        this.loadSongsForPlaylist('home');
+    }
+
+    initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open('MusicPlayerDB', 2);
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('songs')) {
+                    db.createObjectStore('songs', { keyPath: 'id', autoIncrement: true });
+                }
+                if (!db.objectStoreNames.contains('playlists')) {
+                    db.createObjectStore('playlists', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                resolve();
+            };
+
+            request.onerror = (event) => {
+                reject(event.target.error);
+            };
+        });
+    }
+
+    addSongToDB(song) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['songs'], 'readwrite');
+            const store = transaction.objectStore('songs');
+            const request = store.add({
+                title: song.title,
+                artist: song.artist,
+                audioBlob: song.audioBlob,
+                artBlob: song.artBlob
+            });
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    addPlaylistToDB(name) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['playlists'], 'readwrite');
+            const store = transaction.objectStore('playlists');
+            const request = store.add({ name, songIds: [] });
+
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    updatePlaylistInDB(playlist) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['playlists'], 'readwrite');
+            const store = transaction.objectStore('playlists');
+            const request = store.put(playlist);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    removeSongFromDB(id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['songs'], 'readwrite');
+            const store = transaction.objectStore('songs');
+            const request = store.delete(id);
+
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    removePlaylistFromDB(id) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['playlists', 'songs'], 'readwrite');
+            const playlistStore = transaction.objectStore('playlists');
+            const songStore = transaction.objectStore('songs');
+            
+            const getRequest = playlistStore.get(id);
+            getRequest.onsuccess = () => {
+                const playlist = getRequest.result;
+                const deleteSongPromises = playlist.songIds.map(songId => 
+                    this.removeSongFromDB(songId)
+                );
+
+                Promise.all(deleteSongPromises).then(() => {
+                    const deleteRequest = playlistStore.delete(id);
+                    deleteRequest.onsuccess = () => resolve();
+                    deleteRequest.onerror = () => reject(deleteRequest.error);
+                }).catch(err => reject(err));
+            };
+            getRequest.onerror = () => reject(getRequest.error);
+        });
+    }
+
+    resetAll() {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['playlists', 'songs'], 'readwrite');
+            const playlistStore = transaction.objectStore('playlists');
+            const songStore = transaction.objectStore('songs');
+
+            const clearPlaylists = playlistStore.clear();
+            const clearSongs = songStore.clear();
+
+            Promise.all([
+                new Promise(r => { clearPlaylists.onsuccess = r; clearPlaylists.onerror = () => reject(clearPlaylists.error); }),
+                new Promise(r => { clearSongs.onsuccess = r; clearSongs.onerror = () => reject(clearSongs.error); })
+            ]).then(() => {
+                this.playlists = [homePlaylist];
+                this.currentPlaylistId = 'home';
+                this.currentIndex = -1;
+                this.updatePlaylistList();
+                this.loadSongsForPlaylist('home');
+                resolve();
+            }).catch(err => reject(err));
+        });
+    }
+
+    loadPlaylistsFromDB() {
+        const transaction = this.db.transaction(['playlists'], 'readonly');
+        const store = transaction.objectStore('playlists');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            this.playlists = [homePlaylist, ...request.result];
+            this.updatePlaylistList();
+            this.loadSongsForPlaylist('home');
+        };
+        request.onerror = (err) => {
+            console.error('Error loading playlists from DB:', err);
+        };
+    }
+
+    loadSongsForPlaylist(playlistId) {
+        console.log('Loading songs for playlist:', playlistId); // Debug
+        if (playlistId === 'home') {
+            this.songs = defaultSongs;
+            this.currentPlaylistName.textContent = homePlaylist.name;
+            this.renderSongList();
+            if (this.songs.length > 0 && this.currentIndex === -1) {
+                this.currentIndex = 0;
+                this.loadSong();
+            } else if (this.songs.length === 0) {
+                this.clearPlayer();
+            }
+            return;
+        }
+
+        const playlist = this.playlists.find(p => p.id === playlistId);
+        if (!playlist) {
+            this.songs = [];
+            this.currentPlaylistName.textContent = 'No Playlist';
+            this.renderSongList();
+            this.clearPlayer();
+            return;
+        }
+
+        this.currentPlaylistName.textContent = playlist.name;
+        const transaction = this.db.transaction(['songs'], 'readonly');
+        const store = transaction.objectStore('songs');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            const allSongs = request.result;
+            this.songs = allSongs
+                .filter(song => playlist.songIds.includes(song.id))
+                .map(song => new Song(song.id, song.title, song.artist, song.audioBlob, song.artBlob));
+            this.renderSongList();
+            if (this.songs.length > 0 && this.currentIndex === -1) {
+                this.currentIndex = 0;
+                this.loadSong();
+            } else if (this.songs.length === 0) {
+                this.clearPlayer();
+            }
+        };
+        request.onerror = (err) => {
+            console.error('Error loading songs from DB:', err);
+        };
+    }
+
+    viewStorage() {
+        const transaction = this.db.transaction(['playlists', 'songs'], 'readonly');
+        const playlistStore = transaction.objectStore('playlists');
+        const songStore = transaction.objectStore('songs');
+        const playlistRequest = playlistStore.getAll();
+        const songRequest = songStore.getAll();
+
+        Promise.all([
+            new Promise(r => { playlistRequest.onsuccess = () => r(playlistRequest.result); }),
+            new Promise(r => { songRequest.onsuccess = () => r(songRequest.result); })
+        ]).then(([playlists, songs]) => {
+            const output = `Playlists: ${playlists.length}\n` +
+                playlists.map(p => `${p.name} (${p.songIds.length} songs)`).join('\n') +
+                `\n\nTotal Songs: ${songs.length}\n` +
+                songs.map(s => `${s.title} by ${s.artist}`).join('\n');
+            alert(output);
+        }).catch(err => {
+            console.error('Error viewing storage:', err);
+        });
+    }
+
+    setupEventListeners() {
+        console.log('Setting up event listeners'); // Debug
+        if (this.playPauseBtn) {
+            this.playPauseBtn.addEventListener('click', () => {
+                console.log('Play/Pause button clicked'); // Debug
+                this.togglePlayPause();
+            });
+        }
+        if (this.prevBtn) {
+            this.prevBtn.addEventListener('click', () => {
+                console.log('Previous button clicked'); // Debug
+                this.playPrevious();
+            });
+        }
+        if (this.nextBtn) {
+            this.nextBtn.addEventListener('click', () => {
+                console.log('Next button clicked'); // Debug
+                this.playNext();
+            });
+        }
+        if (this.audio) {
+            this.audio.addEventListener('timeupdate', () => this.updateProgress());
+            this.audio.addEventListener('ended', () => this.playNext());
+        }
+        if (this.progressBar) {
+            this.progressBar.addEventListener('input', () => this.seek());
+        }
+        if (this.volumeSlider) {
+            this.volumeSlider.addEventListener('input', () => this.setVolume());
+            this.audio.volume = this.volumeSlider.value / 100;
+            this.volumeSlider.style.setProperty('--value', this.volumeSlider.value);
+        }
+        if (this.progressBar) {
+            this.progressBar.style.setProperty('--value', this.progressBar.value);
+        }
+    }
+
+    setVolume() {
+        this.audio.volume = this.volumeSlider.value / 100;
+        this.volumeSlider.style.setProperty('--value', this.volumeSlider.value);
+    }
+
+    updatePlaylistList() {
+        console.log('Updating playlist list'); // Debug
+        this.playlistList.innerHTML = '';
+        this.playlists.forEach(playlist => {
+            const li = document.createElement('li');
+            if (playlist.id === 'home') {
+                li.classList.add('home-playlist');
+            }
+            const span = document.createElement('span');
+            span.textContent = playlist.name;
+            span.addEventListener('click', () => {
+                console.log('Playlist clicked:', playlist.name); // Debug
+                this.currentPlaylistId = playlist.id;
+                this.currentIndex = -1;
+                this.loadSongsForPlaylist(this.currentPlaylistId);
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remove';
+            removeBtn.className = 'remove-btn';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('Remove playlist clicked:', playlist.name); // Debug
+                this.removePlaylist(playlist.id);
+            });
+            li.appendChild(span);
+            li.appendChild(removeBtn);
+            this.playlistList.appendChild(li);
+        });
+        document.getElementById('playlistAddSelect').innerHTML = '';
+        this.playlists.forEach(playlist => {
+            if (playlist.id === 'home') return;
+            const option = document.createElement('option');
+            option.value = playlist.id;
+            option.textContent = playlist.name;
+            document.getElementById('playlistAddSelect').appendChild(option);
+        });
+        if (this.currentPlaylistId && this.currentPlaylistId !== 'home') {
+            document.getElementById('playlistAddSelect').value = this.currentPlaylistId;
+        }
+    }
+
+    addSong(song, playlistId) {
+        console.log('Adding song to playlist:', playlistId); // Debug
+        if (playlistId === 'home') {
+            alert('Cannot add songs to the Home playlist.');
+            return;
+        }
+        // Since default songs use URLs, we need to store the new song's files as blobs
+        song.audioBlob = song.audioUrl; // This will be a File object from the input
+        song.artBlob = song.artUrl;     // This will be a File object from the input
+        this.addSongToDB(song).then(songId => {
+            const playlist = this.playlists.find(p => p.id === playlistId);
+            playlist.songIds.push(songId);
+            song.id = songId;
+            this.updatePlaylistInDB(playlist).then(() => {
+                if (this.currentPlaylistId === playlistId) {
+                    this.songs.push(song);
+                    this.renderSongList();
+                    if (this.currentIndex === -1) {
+                        this.currentIndex = 0;
+                        this.loadSong();
+                    }
+                }
+            });
+        }).catch(err => console.error('Error adding song:', err));
+    }
+
+    removeSong(index) {
+        console.log('Removing song at index:', index); // Debug
+        const song = this.songs[index];
+        if (this.currentPlaylistId === 'home') {
+            alert('Cannot remove songs from the Home playlist.');
+            return;
+        }
+        this.removeSongFromDB(song.id).then(() => {
+            const playlist = this.playlists.find(p => p.id === this.currentPlaylistId);
+            const songIndexInPlaylist = playlist.songIds.indexOf(song.id);
+            if (songIndexInPlaylist !== -1) {
+                playlist.songIds.splice(songIndexInPlaylist, 1);
+            }
+            this.updatePlaylistInDB(playlist).then(() => {
+                this.songs.splice(index, 1);
+                if (this.currentIndex >= this.songs.length) {
+                    this.currentIndex = this.songs.length - 1;
+                }
+                if (this.currentIndex === -1 && this.songs.length > 0) {
+                    this.currentIndex = 0;
+                }
+                this.renderSongList();
+                if (this.currentIndex >= 0) {
+                    this.loadSong();
+                } else {
+                    this.clearPlayer();
+                }
+            });
+        }).catch(err => console.error('Error removing song:', err));
+    }
+
+    addPlaylist(name) {
+        console.log('Adding playlist:', name); // Debug
+        this.addPlaylistToDB(name).then(id => {
+            this.playlists.push({ id, name, songIds: [] });
+            this.updatePlaylistList();
+            this.currentPlaylistId = id;
+            this.loadSongsForPlaylist(id);
+        }).catch(err => console.error('Error adding playlist:', err));
+    }
+
+    removePlaylist(id) {
+        console.log('Removing playlist:', id); // Debug
+        if (id === 'home') {
+            alert('Cannot remove the Home playlist.');
+            return;
+        }
+        this.removePlaylistFromDB(id).then(() => {
+            const index = this.playlists.findIndex(p => p.id === id);
+            this.playlists.splice(index, 1);
+            if (this.currentPlaylistId === id) {
+                this.currentPlaylistId = 'home';
+                this.loadSongsForPlaylist(this.currentPlaylistId);
+            }
+            this.updatePlaylistList();
+        }).catch(err => console.error('Error removing playlist:', err));
+    }
+
+    renderSongList() {
+        console.log('Rendering song list'); // Debug
+        this.songList.innerHTML = '';
+        this.songs.forEach((song, index) => {
+            const songElement = document.createElement('div');
+            songElement.className = 'song-item';
+            // Use URL.createObjectURL for songs added via the form (stored as blobs), or the direct URL for default songs
+            const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artBlob);
+            songElement.innerHTML = `
+                <img src="${artUrl}" alt="Album Art">
+                <div>
+                    <h3>${song.title}</h3>
+                    <p>${song.artist}</p>
+                </div>
+            `;
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remove';
+            removeBtn.className = 'remove-btn';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                console.log('Remove song clicked at index:', index); // Debug
+                this.removeSong(index);
+            });
+            songElement.appendChild(removeBtn);
+
+            songElement.addEventListener('click', (e) => {
+                if (e.target !== removeBtn) {
+                    console.log('Song clicked at index:', index); // Debug
+                    this.currentIndex = index;
+                    this.loadSong();
+                    this.play();
+                }
+            });
+            this.songList.appendChild(songElement);
+        });
+    }
+
+    loadSong() {
+        console.log('Loading song at index:', this.currentIndex); // Debug
+        if (this.currentIndex >= 0 && this.currentIndex < this.songs.length) {
+            const song = this.songs[this.currentIndex];
+            // Use URL.createObjectURL for songs added via the form (stored as blobs), or the direct URL for default songs
+            this.audio.src = typeof song.audioUrl === 'string' ? song.audioUrl : URL.createObjectURL(song.audioBlob);
+            this.currentArt.src = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artBlob);
+            this.currentTitle.textContent = song.title;
+            this.currentArtist.textContent = song.artist;
+            this.playPauseBtn.textContent = '▶️';
+            this.isPlaying = false;
+        }
+    }
+
+    clearPlayer() {
+        console.log('Clearing player'); // Debug
+        this.audio.src = '';
+        this.currentArt.src = '';
+        this.currentTitle.textContent = '';
+        this.currentArtist.textContent = '';
+        this.playPauseBtn.textContent = '▶️';
+        this.isPlaying = false;
+    }
+
+    togglePlayPause() {
+        console.log('Toggling play/pause'); // Debug
+        if (!this.audio.src) return;
+        if (this.isPlaying) {
+            this.audio.pause();
+            this.playPauseBtn.textContent = '▶️';
+        } else {
+            this.audio.play().catch(err => console.error('Error playing audio:', err));
+            this.playPauseBtn.textContent = '⏸';
+        }
+        this.isPlaying = !this.isPlaying;
+    }
+
+    playPrevious() {
+        console.log('Playing previous song'); // Debug
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.loadSong();
+            this.play();
+        }
+    }
+
+    playNext() {
+        console.log('Playing next song'); // Debug
+        if (this.currentIndex < this.songs.length - 1) {
+            this.currentIndex++;
+            this.loadSong();
+            this.play();
+        }
+    }
+
+    play() {
+        console.log('Playing song'); // Debug
+        if (this.audio.src) {
+            this.audio.play().catch(err => console.error('Error playing audio:', err));
+            this.playPauseBtn.textContent = '⏸';
+            this.isPlaying = true;
+        }
+    }
+
+    updateProgress() {
+        const current = this.audio.currentTime;
+        const duration = this.audio.duration;
+        const progressPercent = (current / duration) * 100 || 0;
+        this.progressBar.value = progressPercent;
+        this.progressBar.style.setProperty('--value', progressPercent);
+        this.currentTime.textContent = this.formatTime(current);
+        this.duration.textContent = this.formatTime(duration);
+    }
+
+    seek() {
+        const duration = this.audio.duration;
+        const value = this.progressBar.value;
+        this.audio.currentTime = (value / 100) * duration;
+        this.progressBar.style.setProperty('--value', value);
+    }
+
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+}
+
+// Initialize the player
+try {
+    const player = new MusicPlayer();
+    console.log('Player initialized'); // Debug
+
+    // DOM elements for event listeners
+    const songForm = document.getElementById('songForm');
+    const addSongBtn = document.getElementById('addSongBtn');
+    const submitSong = document.getElementById('submitSong');
+    const cancelForm = document.getElementById('cancelForm');
+    const createPlaylistForm = document.getElementById('createPlaylistForm');
+    const createPlaylistBtn = document.getElementById('createPlaylistBtn');
+    const submitPlaylist = document.getElementById('submitPlaylist');
+    const cancelPlaylist = document.getElementById('cancelPlaylist');
+    const resetAllBtn = document.getElementById('resetAllBtn');
+    const viewStorageBtn = document.getElementById('viewStorageBtn');
+
+    console.log('Event listener DOM elements:', { // Debug
+        songForm,
+        addSongBtn,
+        submitSong,
+        cancelForm,
+        createPlaylistForm,
+        createPlaylistBtn,
+        submitPlaylist,
+        cancelPlaylist,
+        resetAllBtn,
+        viewStorageBtn
+    });
+
+    // Event listeners
+    if (addSongBtn) {
+        addSongBtn.addEventListener('click', () => {
+            console.log('Add Song button clicked'); // Debug
+            songForm.classList.remove('hidden');
+        });
+    }
+
+    if (submitSong) {
+        submitSong.addEventListener('click', () => {
+            console.log('Submit Song button clicked'); // Debug
+            const title = document.getElementById('songTitle').value;
+            const artist = document.getElementById('artist').value;
+            const audioFile = document.getElementById('audioFile').files[0];
+            const albumArt = document.getElementById('albumArt').files[0];
+            const playlistId = parseInt(document.getElementById('playlistAddSelect').value);
+
+            if (title && artist && audioFile && albumArt && playlistId) {
+                const song = new Song(null, title, artist, audioFile, albumArt);
+                player.addSong(song, playlistId);
+                songForm.classList.add('hidden');
+                clearSongForm();
+            } else {
+                alert('Please fill out all fields and select a playlist.');
+            }
+        });
+    }
+
+    if (cancelForm) {
+        cancelForm.addEventListener('click', () => {
+            console.log('Cancel Song Form button clicked'); // Debug
+            songForm.classList.add('hidden');
+            clearSongForm();
+        });
+    }
+
+    if (createPlaylistBtn) {
+        createPlaylistBtn.addEventListener('click', () => {
+            console.log('Create Playlist button clicked'); // Debug
+            createPlaylistForm.classList.remove('hidden');
+        });
+    }
+
+    if (submitPlaylist) {
+        submitPlaylist.addEventListener('click', () => {
+            console.log('Submit Playlist button clicked'); // Debug
+            const name = document.getElementById('playlistName').value;
+            if (name) {
+                player.addPlaylist(name);
+                createPlaylistForm.classList.add('hidden');
+                clearPlaylistForm();
+            } else {
+                alert('Please enter a playlist name.');
+            }
+        });
+    }
+
+    if (cancelPlaylist) {
+        cancelPlaylist.addEventListener('click', () => {
+            console.log('Cancel Playlist Form button clicked'); // Debug
+            createPlaylistForm.classList.add('hidden');
+            clearPlaylistForm();
+        });
+    }
+
+    if (resetAllBtn) {
+        resetAllBtn.addEventListener('click', () => {
+            console.log('Reset All button clicked'); // Debug
+            if (confirm('Are you sure you want to reset everything? This will delete all playlists and songs except the Home playlist.')) {
+                player.resetAll().catch(err => console.error('Error resetting:', err));
+            }
+        });
+    }
+
+    if (viewStorageBtn) {
+        viewStorageBtn.addEventListener('click', () => {
+            console.log('View Storage button clicked'); // Debug
+            player.viewStorage();
+        });
+    }
+
+    function clearSongForm() {
+        console.log('Clearing song form'); // Debug
+        document.getElementById('songTitle').value = '';
+        document.getElementById('artist').value = '';
+        document.getElementById('audioFile').value = '';
+        document.getElementById('albumArt').value = '';
+    }
+
+    function clearPlaylistForm() {
+        console.log('Clearing playlist form'); // Debug
+        document.getElementById('playlistName').value = '';
+    }
+} catch (err) {
+    console.error('Error initializing player or setting up event listeners:', err);
+}
