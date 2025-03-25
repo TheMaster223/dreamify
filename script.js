@@ -20,8 +20,8 @@ class Song {
 const defaultSongs = [
     new Song(
         'default-1',
-        'Sample Song 1',
-        'Sample Artist 1',
+        'Just the Two of Us',
+        'Dreamybull, Bill Withers, Grover Washington, Jr.',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true', // Real audio file
         'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true' // Placeholder image
     ),
