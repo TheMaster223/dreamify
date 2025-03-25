@@ -22,8 +22,8 @@ const defaultSongs = [
         'default-1',
         'Sample Song 1',
         'Sample Artist 1',
-        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Real audio file
-        'https://via.placeholder.com/150?text=Album+Art+1' // Placeholder image
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3', // Real audio file
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true' // Placeholder image
     ),
     new Song(
         'default-2',
