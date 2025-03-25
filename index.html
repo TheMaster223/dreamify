@@ -4,34 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dreamify</title>
-    <!-- Favicon -->
     <link rel="icon" type="image/jpeg" href="https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true">
     <link rel="stylesheet" href="styles.css">
-    <!-- Import Inter font from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">
                 <h2>Dreamify</h2>
             </div>
-            <!-- Home Playlist (Standalone) -->
             <div class="nav-item home-playlist" id="homeNavItem">
                 <span>Home</span>
             </div>
-            <!-- Core Action Buttons -->
             <button id="createPlaylistBtn" class="action-btn">
                 <span class="icon">➕</span> Create Playlist
             </button>
             <button id="addSongBtn" class="action-btn">
                 <span class="icon">🎵</span> Add Song
             </button>
-            <!-- Playlists Section -->
             <h3>Playlists</h3>
             <ul id="playlistList"></ul>
-            <!-- Settings Section (Less Prominent) -->
             <h3 class="settings-title">Settings</h3>
             <button id="viewStorageBtn" class="settings-btn">
                 <span class="icon">📊</span> View Storage
@@ -40,26 +33,18 @@
                 <span class="icon">🔄</span> Reset All
             </button>
         </div>
-
-        <!-- Main Content -->
         <div class="main">
-            <!-- Header -->
             <div class="header">
                 <h1 id="currentPlaylistName">No Playlist</h1>
-                <!-- Search Bar for Songs (Only on Home) -->
                 <div class="search-container hidden" id="songSearchContainer">
                     <span class="search-icon">🔍</span>
                     <input type="text" id="songSearch" placeholder="Search Songs in Home">
                     <button class="clear-search hidden" id="clearSongSearch">✖</button>
                 </div>
             </div>
-
-            <!-- Song List -->
             <div class="playlist" id="songList"></div>
         </div>
     </div>
-
-    <!-- Add Song Modal -->
     <div class="modal hidden" id="songModal">
         <div class="modal-content song-form" id="songForm">
             <h2>Add a New Song</h2>
@@ -74,8 +59,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Create Playlist Modal -->
     <div class="modal hidden" id="playlistModal">
         <div class="modal-content song-form" id="createPlaylistForm">
             <h2>Create a New Playlist</h2>
@@ -86,8 +69,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Player (Fixed at Bottom) -->
     <div class="player">
         <div class="player-content">
             <div class="current-song">
@@ -118,7 +99,6 @@
         </div>
         <audio id="audioPlayer"></audio>
     </div>
-
     <script src="script.js" defer></script>
 </body>
 </html>

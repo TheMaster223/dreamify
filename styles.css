@@ -25,7 +25,6 @@ body {
     height: 100%;
 }
 
-/* Custom Scrollbar for Sidebar (Webkit) */
 .sidebar::-webkit-scrollbar {
     width: 8px;
 }
@@ -44,7 +43,6 @@ body {
     visibility: visible;
 }
 
-/* Custom Scrollbar for Sidebar (Firefox) */
 .sidebar {
     scrollbar-width: thin;
     scrollbar-color: #535353 transparent;
@@ -81,7 +79,7 @@ body {
 
 .search-container input {
     width: 100%;
-    padding: 10px 36px 10px 36px; /* Space for icons on both sides */
+    padding: 10px 36px 10px 36px;
     background: #404040;
     border: none;
     color: #fff;
@@ -273,7 +271,6 @@ body {
     overflow-y: auto;
 }
 
-/* Custom Scrollbar for Main Content (Webkit) */
 .main::-webkit-scrollbar {
     width: 8px;
 }
@@ -292,7 +289,6 @@ body {
     visibility: visible;
 }
 
-/* Custom Scrollbar for Main Content (Firefox) */
 .main {
     scrollbar-width: thin;
     scrollbar-color: #535353 transparent;
@@ -406,7 +402,6 @@ body {
     overflow-y: auto;
 }
 
-/* Custom Scrollbar for Playlist (Webkit) */
 .playlist::-webkit-scrollbar {
     width: 8px;
 }
@@ -425,7 +420,6 @@ body {
     visibility: visible;
 }
 
-/* Custom Scrollbar for Playlist (Firefox) */
 .playlist {
     scrollbar-width: thin;
     scrollbar-color: #535353 transparent;
