@@ -22,7 +22,7 @@ const defaultSongs = [
         'CORPSE, Savage Ga$p',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default2.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default2.jpg?raw=true'
-    )
+    ),
     new Song(
         'default3',
         'Whiskey',
