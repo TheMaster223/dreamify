@@ -1,18 +1,13 @@
 console.log('Script loaded'); // Debug: Confirm script is running
 
-// Placeholder function to create a dummy blob (still included for reference, but we won't use it for default songs)
-function createDummyBlob(type, content) {
-    return new Blob([content], { type });
-}
-
 // Define Song class
 class Song {
     constructor(id, title, artist, audioUrl, artUrl) {
         this.id = id;
         this.title = title;
         this.artist = artist;
-        this.audioUrl = audioUrl; // Now using URLs instead of blobs
-        this.artUrl = artUrl;
+        this.audioUrl = audioUrl; // URL for default songs, File/Blob for added songs
+        this.artUrl = artUrl;     // URL for default songs, File/Blob for added songs
     }
 }
 
@@ -20,10 +15,10 @@ class Song {
 const defaultSongs = [
     new Song(
         'default-1',
-        'Just the Two of Us',
-        'Dreamybull, Bill Withers, Grover Washington, Jr.',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true', // Real audio file
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true' // Placeholder image
+        'Sample Song 1',
+        'Sample Artist 1',
+        'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        'https://via.placeholder.com/150?text=Album+Art+1'
     ),
     new Song(
         'default-2',
@@ -56,6 +51,8 @@ class MusicPlayer {
         this.playlists = [];
         this.currentPlaylistId = 'home';
         this.currentIndex = -1;
+        this.currentSong = null; // Track the currently playing song
+        this.currentSongPlaylistId = null; // Track the playlist of the current song
         this.audio = document.getElementById('audioPlayer');
         this.isPlaying = false;
 
@@ -122,6 +119,7 @@ class MusicPlayer {
             };
 
             request.onerror = (event) => {
+                console.error('IndexedDB initialization error:', event.target.error);
                 reject(event.target.error);
             };
         });
@@ -134,12 +132,18 @@ class MusicPlayer {
             const request = store.add({
                 title: song.title,
                 artist: song.artist,
-                audioBlob: song.audioBlob,
-                artBlob: song.artBlob
+                audioBlob: song.audioUrl, // Store the File/Blob
+                artBlob: song.artUrl     // Store the File/Blob
             });
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                console.log('Song added to DB with ID:', request.result);
+                resolve(request.result);
+            };
+            request.onerror = () => {
+                console.error('Error adding song to DB:', request.error);
+                reject(request.error);
+            };
         });
     }
 
@@ -149,8 +153,14 @@ class MusicPlayer {
             const store = transaction.objectStore('playlists');
             const request = store.add({ name, songIds: [] });
 
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                console.log('Playlist added to DB with ID:', request.result);
+                resolve(request.result);
+            };
+            request.onerror = () => {
+                console.error('Error adding playlist to DB:', request.error);
+                reject(request.error);
+            };
         });
     }
 
@@ -160,8 +170,14 @@ class MusicPlayer {
             const store = transaction.objectStore('playlists');
             const request = store.put(playlist);
 
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                console.log('Playlist updated in DB:', playlist.id);
+                resolve();
+            };
+            request.onerror = () => {
+                console.error('Error updating playlist in DB:', request.error);
+                reject(request.error);
+            };
         });
     }
 
@@ -171,8 +187,14 @@ class MusicPlayer {
             const store = transaction.objectStore('songs');
             const request = store.delete(id);
 
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                console.log('Song removed from DB:', id);
+                resolve();
+            };
+            request.onerror = () => {
+                console.error('Error removing song from DB:', request.error);
+                reject(request.error);
+            };
         });
     }
 
@@ -185,17 +207,34 @@ class MusicPlayer {
             const getRequest = playlistStore.get(id);
             getRequest.onsuccess = () => {
                 const playlist = getRequest.result;
+                if (!playlist) {
+                    console.error('Playlist not found in DB:', id);
+                    reject(new Error('Playlist not found'));
+                    return;
+                }
                 const deleteSongPromises = playlist.songIds.map(songId => 
                     this.removeSongFromDB(songId)
                 );
 
                 Promise.all(deleteSongPromises).then(() => {
                     const deleteRequest = playlistStore.delete(id);
-                    deleteRequest.onsuccess = () => resolve();
-                    deleteRequest.onerror = () => reject(deleteRequest.error);
-                }).catch(err => reject(err));
+                    deleteRequest.onsuccess = () => {
+                        console.log('Playlist removed from DB:', id);
+                        resolve();
+                    };
+                    deleteRequest.onerror = () => {
+                        console.error('Error deleting playlist from DB:', deleteRequest.error);
+                        reject(deleteRequest.error);
+                    };
+                }).catch(err => {
+                    console.error('Error deleting songs during playlist removal:', err);
+                    reject(err);
+                });
             };
-            getRequest.onerror = () => reject(getRequest.error);
+            getRequest.onerror = () => {
+                console.error('Error fetching playlist from DB:', getRequest.error);
+                reject(getRequest.error);
+            };
         });
     }
 
@@ -209,8 +248,20 @@ class MusicPlayer {
             const clearSongs = songStore.clear();
 
             Promise.all([
-                new Promise(r => { clearPlaylists.onsuccess = r; clearPlaylists.onerror = () => reject(clearPlaylists.error); }),
-                new Promise(r => { clearSongs.onsuccess = r; clearSongs.onerror = () => reject(clearSongs.error); })
+                new Promise(r => { 
+                    clearPlaylists.onsuccess = () => {
+                        console.log('Playlists cleared from DB');
+                        r();
+                    }; 
+                    clearPlaylists.onerror = () => reject(clearPlaylists.error); 
+                }),
+                new Promise(r => { 
+                    clearSongs.onsuccess = () => {
+                        console.log('Songs cleared from DB');
+                        r();
+                    }; 
+                    clearSongs.onerror = () => reject(clearSongs.error); 
+                })
             ]).then(() => {
                 this.playlists = [homePlaylist];
                 this.currentPlaylistId = 'home';
@@ -218,36 +269,49 @@ class MusicPlayer {
                 this.updatePlaylistList();
                 this.loadSongsForPlaylist('home');
                 resolve();
-            }).catch(err => reject(err));
+            }).catch(err => {
+                console.error('Error resetting DB:', err);
+                reject(err);
+            });
         });
     }
 
     loadPlaylistsFromDB() {
-        const transaction = this.db.transaction(['playlists'], 'readonly');
-        const store = transaction.objectStore('playlists');
-        const request = store.getAll();
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['playlists'], 'readonly');
+            const store = transaction.objectStore('playlists');
+            const request = store.getAll();
 
-        request.onsuccess = () => {
-            this.playlists = [homePlaylist, ...request.result];
-            this.updatePlaylistList();
-            this.loadSongsForPlaylist('home');
-        };
-        request.onerror = (err) => {
-            console.error('Error loading playlists from DB:', err);
-        };
+            request.onsuccess = () => {
+                this.playlists = [homePlaylist, ...request.result];
+                console.log('Playlists loaded from DB:', this.playlists);
+                this.updatePlaylistList();
+                this.loadSongsForPlaylist(this.currentPlaylistId);
+                resolve();
+            };
+            request.onerror = (err) => {
+                console.error('Error loading playlists from DB:', err);
+                reject(err);
+            };
+        });
     }
 
     loadSongsForPlaylist(playlistId) {
         console.log('Loading songs for playlist:', playlistId); // Debug
+        this.currentPlaylistId = playlistId;
+
         if (playlistId === 'home') {
             this.songs = defaultSongs;
             this.currentPlaylistName.textContent = homePlaylist.name;
             this.renderSongList();
-            if (this.songs.length > 0 && this.currentIndex === -1) {
-                this.currentIndex = 0;
-                this.loadSong();
-            } else if (this.songs.length === 0) {
-                this.clearPlayer();
+            // Don't reset the player if a song is already playing
+            if (!this.currentSong) {
+                if (this.songs.length > 0 && this.currentIndex === -1) {
+                    this.currentIndex = 0;
+                    this.loadSong();
+                } else if (this.songs.length === 0) {
+                    this.clearPlayer();
+                }
             }
             return;
         }
@@ -257,7 +321,10 @@ class MusicPlayer {
             this.songs = [];
             this.currentPlaylistName.textContent = 'No Playlist';
             this.renderSongList();
-            this.clearPlayer();
+            // Don't reset the player if a song is already playing
+            if (!this.currentSong) {
+                this.clearPlayer();
+            }
             return;
         }
 
@@ -268,19 +335,30 @@ class MusicPlayer {
 
         request.onsuccess = () => {
             const allSongs = request.result;
+            console.log('All songs in DB:', allSongs);
+            console.log('Playlist songIds:', playlist.songIds);
             this.songs = allSongs
                 .filter(song => playlist.songIds.includes(song.id))
                 .map(song => new Song(song.id, song.title, song.artist, song.audioBlob, song.artBlob));
+            console.log('Filtered songs for playlist:', this.songs);
             this.renderSongList();
-            if (this.songs.length > 0 && this.currentIndex === -1) {
-                this.currentIndex = 0;
-                this.loadSong();
-            } else if (this.songs.length === 0) {
-                this.clearPlayer();
+            // Don't reset the player if a song is already playing
+            if (!this.currentSong) {
+                if (this.songs.length > 0 && this.currentIndex === -1) {
+                    this.currentIndex = 0;
+                    this.loadSong();
+                } else if (this.songs.length === 0) {
+                    this.clearPlayer();
+                }
             }
         };
         request.onerror = (err) => {
             console.error('Error loading songs from DB:', err);
+            this.songs = [];
+            this.renderSongList();
+            if (!this.currentSong) {
+                this.clearPlayer();
+            }
         };
     }
 
@@ -297,11 +375,14 @@ class MusicPlayer {
         ]).then(([playlists, songs]) => {
             const output = `Playlists: ${playlists.length}\n` +
                 playlists.map(p => `${p.name} (${p.songIds.length} songs)`).join('\n') +
-                `\n\nTotal Songs: ${songs.length}\n` +
-                songs.map(s => `${s.title} by ${s.artist}`).join('\n');
+                `\n\nTotal Songs in DB: ${songs.length}\n` +
+                songs.map(s => `${s.title} by ${s.artist} (Audio: ${s.audioBlob ? s.audioBlob.size : 'N/A'} bytes, Art: ${s.artBlob ? s.artBlob.size : 'N/A'} bytes)`).join('\n') +
+                `\n\nDefault Songs (Home Playlist): ${defaultSongs.length}\n` +
+                defaultSongs.map(s => `${s.title} by ${s.artist}`).join('\n');
             alert(output);
         }).catch(err => {
             console.error('Error viewing storage:', err);
+            alert('Error viewing storage. Check console for details.');
         });
     }
 
@@ -359,16 +440,14 @@ class MusicPlayer {
             span.textContent = playlist.name;
             span.addEventListener('click', () => {
                 console.log('Playlist clicked:', playlist.name); // Debug
-                this.currentPlaylistId = playlist.id;
-                this.currentIndex = -1;
-                this.loadSongsForPlaylist(this.currentPlaylistId);
+                this.loadSongsForPlaylist(playlist.id);
             });
             const removeBtn = document.createElement('button');
             removeBtn.textContent = 'Remove';
             removeBtn.className = 'remove-btn';
             removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log('Remove playlist clicked:', playlist.name); // Debug
+                console.log('Remove playlist clicked:', playlist.name, 'ID:', playlist.id); // Debug
                 this.removePlaylist(playlist.id);
             });
             li.appendChild(span);
@@ -394,14 +473,16 @@ class MusicPlayer {
             alert('Cannot add songs to the Home playlist.');
             return;
         }
-        // Since default songs use URLs, we need to store the new song's files as blobs
-        song.audioBlob = song.audioUrl; // This will be a File object from the input
-        song.artBlob = song.artUrl;     // This will be a File object from the input
         this.addSongToDB(song).then(songId => {
             const playlist = this.playlists.find(p => p.id === playlistId);
+            if (!playlist) {
+                console.error('Playlist not found:', playlistId);
+                return;
+            }
             playlist.songIds.push(songId);
             song.id = songId;
             this.updatePlaylistInDB(playlist).then(() => {
+                console.log('Playlist updated with new song:', playlist);
                 if (this.currentPlaylistId === playlistId) {
                     this.songs.push(song);
                     this.renderSongList();
@@ -410,7 +491,7 @@ class MusicPlayer {
                         this.loadSong();
                     }
                 }
-            });
+            }).catch(err => console.error('Error updating playlist in DB:', err));
         }).catch(err => console.error('Error adding song:', err));
     }
 
@@ -436,19 +517,25 @@ class MusicPlayer {
                     this.currentIndex = 0;
                 }
                 this.renderSongList();
-                if (this.currentIndex >= 0) {
-                    this.loadSong();
-                } else {
-                    this.clearPlayer();
+                // If the removed song was playing, update the player
+                if (this.currentSong && this.currentSong.id === song.id) {
+                    if (this.currentIndex >= 0) {
+                        this.loadSong();
+                    } else {
+                        this.clearPlayer();
+                        this.currentSong = null;
+                        this.currentSongPlaylistId = null;
+                    }
                 }
-            });
+            }).catch(err => console.error('Error updating playlist after song removal:', err));
         }).catch(err => console.error('Error removing song:', err));
     }
 
     addPlaylist(name) {
         console.log('Adding playlist:', name); // Debug
         this.addPlaylistToDB(name).then(id => {
-            this.playlists.push({ id, name, songIds: [] });
+            const newPlaylist = { id, name, songIds: [] };
+            this.playlists.push(newPlaylist);
             this.updatePlaylistList();
             this.currentPlaylistId = id;
             this.loadSongsForPlaylist(id);
@@ -456,20 +543,28 @@ class MusicPlayer {
     }
 
     removePlaylist(id) {
-        console.log('Removing playlist:', id); // Debug
+        console.log('Removing playlist with ID:', id); // Debug
         if (id === 'home') {
             alert('Cannot remove the Home playlist.');
             return;
         }
         this.removePlaylistFromDB(id).then(() => {
             const index = this.playlists.findIndex(p => p.id === id);
-            this.playlists.splice(index, 1);
-            if (this.currentPlaylistId === id) {
-                this.currentPlaylistId = 'home';
-                this.loadSongsForPlaylist(this.currentPlaylistId);
+            if (index !== -1) {
+                this.playlists.splice(index, 1);
+                console.log('Playlist removed from array:', id);
+                if (this.currentPlaylistId === id) {
+                    this.currentPlaylistId = 'home';
+                    this.loadSongsForPlaylist(this.currentPlaylistId);
+                }
+                this.updatePlaylistList();
+            } else {
+                console.error('Playlist not found in array:', id);
             }
-            this.updatePlaylistList();
-        }).catch(err => console.error('Error removing playlist:', err));
+        }).catch(err => {
+            console.error('Error removing playlist:', err);
+            alert('Failed to remove playlist. Check console for details.');
+        });
     }
 
     renderSongList() {
@@ -478,8 +573,7 @@ class MusicPlayer {
         this.songs.forEach((song, index) => {
             const songElement = document.createElement('div');
             songElement.className = 'song-item';
-            // Use URL.createObjectURL for songs added via the form (stored as blobs), or the direct URL for default songs
-            const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artBlob);
+            const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
             songElement.innerHTML = `
                 <img src="${artUrl}" alt="Album Art">
                 <div>
@@ -513,13 +607,15 @@ class MusicPlayer {
         console.log('Loading song at index:', this.currentIndex); // Debug
         if (this.currentIndex >= 0 && this.currentIndex < this.songs.length) {
             const song = this.songs[this.currentIndex];
-            // Use URL.createObjectURL for songs added via the form (stored as blobs), or the direct URL for default songs
-            this.audio.src = typeof song.audioUrl === 'string' ? song.audioUrl : URL.createObjectURL(song.audioBlob);
-            this.currentArt.src = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artBlob);
+            this.audio.src = typeof song.audioUrl === 'string' ? song.audioUrl : URL.createObjectURL(song.audioUrl);
+            this.currentArt.src = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
             this.currentTitle.textContent = song.title;
             this.currentArtist.textContent = song.artist;
             this.playPauseBtn.textContent = '▶️';
             this.isPlaying = false;
+            this.currentSong = song;
+            this.currentSongPlaylistId = this.currentPlaylistId;
+            console.log('Current song set:', this.currentSong, 'from playlist:', this.currentSongPlaylistId);
         }
     }
 
@@ -531,6 +627,8 @@ class MusicPlayer {
         this.currentArtist.textContent = '';
         this.playPauseBtn.textContent = '▶️';
         this.isPlaying = false;
+        this.currentSong = null;
+        this.currentSongPlaylistId = null;
     }
 
     togglePlayPause() {
