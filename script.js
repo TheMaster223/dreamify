@@ -200,11 +200,11 @@ class MusicPlayer {
 
     removePlaylistFromDB(id) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['playlists', 'songs'], 'readwrite');
-            const playlistStore = transaction.objectStore('playlists');
-            const songStore = transaction.objectStore('songs');
-            
-            const getRequest = playlistStore.get(id);
+            // Step 1: Fetch the playlist to get its songIds
+            const transaction1 = this.db.transaction(['playlists'], 'readonly');
+            const playlistStore1 = transaction1.objectStore('playlists');
+            const getRequest = playlistStore1.get(id);
+
             getRequest.onsuccess = () => {
                 const playlist = getRequest.result;
                 if (!playlist) {
@@ -212,12 +212,33 @@ class MusicPlayer {
                     reject(new Error('Playlist not found'));
                     return;
                 }
-                const deleteSongPromises = playlist.songIds.map(songId => 
-                    this.removeSongFromDB(songId)
-                );
+
+                const songIds = playlist.songIds || [];
+                console.log('Songs to delete for playlist', id, ':', songIds);
+
+                // Step 2: Start a new transaction to delete songs and the playlist
+                const transaction2 = this.db.transaction(['playlists', 'songs'], 'readwrite');
+                const playlistStore2 = transaction2.objectStore('playlists');
+                const songStore = transaction2.objectStore('songs');
+
+                // Delete all songs associated with the playlist
+                const deleteSongPromises = songIds.map(songId => {
+                    return new Promise((res, rej) => {
+                        const deleteRequest = songStore.delete(songId);
+                        deleteRequest.onsuccess = () => {
+                            console.log('Deleted song:', songId);
+                            res();
+                        };
+                        deleteRequest.onerror = () => {
+                            console.error('Error deleting song:', songId, deleteRequest.error);
+                            rej(deleteRequest.error);
+                        };
+                    });
+                });
 
                 Promise.all(deleteSongPromises).then(() => {
-                    const deleteRequest = playlistStore.delete(id);
+                    // Step 3: Delete the playlist
+                    const deleteRequest = playlistStore2.delete(id);
                     deleteRequest.onsuccess = () => {
                         console.log('Playlist removed from DB:', id);
                         resolve();
@@ -231,6 +252,7 @@ class MusicPlayer {
                     reject(err);
                 });
             };
+
             getRequest.onerror = () => {
                 console.error('Error fetching playlist from DB:', getRequest.error);
                 reject(getRequest.error);
