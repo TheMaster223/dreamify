@@ -16,7 +16,6 @@ body {
     height: calc(100vh - 90px);
 }
 
-/* Sidebar */
 .sidebar {
     width: 250px;
     background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
@@ -71,7 +70,6 @@ body {
     margin-top: 32px;
 }
 
-/* Search Bar Styles */
 .search-container {
     position: relative;
     margin: 12px 0;
@@ -261,7 +259,6 @@ body {
     background: #9CA3AF;
 }
 
-/* Main Content */
 .main {
     flex: 1;
     padding: 24px;
@@ -305,7 +302,6 @@ body {
     margin-bottom: 16px;
 }
 
-/* Modal Styles */
 .modal {
     position: fixed;
     top: 0;
@@ -480,7 +476,6 @@ body {
     background: #9CA3AF;
 }
 
-/* Player */
 .player {
     position: fixed;
     bottom: 0;
@@ -656,4 +651,183 @@ body {
     background-image: linear-gradient(to right, #C084FC, #C084FC);
     background-size: calc(var(--value) * 1%) 100%;
     background-repeat: no-repeat;
+}
+
+/* Mobile-Specific Styles */
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto; /* Allow scrolling on mobile */
+    }
+
+    .container {
+        flex-direction: column; /* Stack sidebar and main content vertically */
+        height: auto; /* Allow container to grow with content */
+    }
+
+    .sidebar {
+        width: 100%; /* Full width on mobile */
+        padding: 16px;
+        height: auto; /* Allow sidebar to grow with content */
+    }
+
+    .sidebar .logo h2 {
+        font-size: 18px; /* Slightly smaller logo text */
+    }
+
+    .sidebar h3 {
+        font-size: 10px;
+        margin: 16px 0 8px;
+    }
+
+    .nav-item {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .action-btn,
+    .settings-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .sidebar li {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .sidebar li button.remove-btn {
+        padding: 3px 6px;
+        font-size: 10px;
+    }
+
+    .main {
+        padding: 16px;
+        flex: none; /* Remove flex growth to allow natural height */
+    }
+
+    .header h1 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
+    .search-container input {
+        padding: 8px 30px 8px 30px;
+        font-size: 12px;
+    }
+
+    .search-container .search-icon {
+        left: 10px;
+        font-size: 14px;
+    }
+
+    .search-container .clear-search {
+        right: 10px;
+        font-size: 12px;
+    }
+
+    .song-item {
+        padding: 8px;
+        margin: 6px 0;
+    }
+
+    .song-item img {
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+    }
+
+    .song-item h3 {
+        font-size: 14px;
+    }
+
+    .song-item p {
+        font-size: 12px;
+    }
+
+    .song-item .remove-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
+    .player {
+        height: 70px; /* Smaller player height */
+        padding: 0 16px;
+    }
+
+    .player-content {
+        flex-wrap: wrap; /* Allow wrapping if needed */
+    }
+
+    .current-song {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .current-song img {
+        width: 40px;
+        height: 40px;
+        margin-right: 12px;
+    }
+
+    .current-song h2 {
+        font-size: 14px;
+    }
+
+    .current-song p {
+        font-size: 12px;
+    }
+
+    .player-controls {
+        flex: none;
+        width: 100%;
+    }
+
+    .controls {
+        gap: 16px;
+        margin-bottom: 8px;
+    }
+
+    .controls button {
+        font-size: 20px;
+    }
+
+    .progress {
+        max-width: 100%;
+    }
+
+    .time {
+        font-size: 10px;
+        margin-bottom: 4px;
+    }
+
+    .volume {
+        display: none; /* Hide volume control on mobile to save space */
+    }
+
+    .modal-content {
+        padding: 16px;
+        max-width: 90%; /* Ensure modal fits within screen */
+    }
+
+    .modal-content h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    .song-form input,
+    .song-form select {
+        padding: 8px;
+        font-size: 12px;
+        margin: 8px 0;
+    }
+
+    .song-form button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .modal-actions {
+        margin-top: 16px;
+        gap: 8px;
+    }
 }
