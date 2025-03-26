@@ -46,7 +46,7 @@ const defaultSongs = [
     ),
 	new Song(
         'default6',
-        'VULTURES 3 Leak',
+        'VULTURES 3 LEAK',
         'Joe Miggle, ¥$',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default6.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default6.jpg?raw=true'
@@ -57,6 +57,13 @@ const defaultSongs = [
         'Joe Miggle, LoveAndLightTV',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default7.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default7.jpg?raw=true'
+    ),
+	new Song(
+        'default8',
+        'The Gooner Thoughts Won',
+        'Joe Miggle, Kyrie Irving',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default8.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default8.jpg?raw=true'
     )
 ];
 
