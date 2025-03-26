@@ -44,6 +44,7 @@ const defaultSongs = [
         'https://github.com/TheMaster223/tobe/blob/master/assets/default5.mp3?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default5.jpg?raw=true'
     ),
+	new Song(
         'default6',
         'VULTURES 3 Leak',
         'Joe Miggle, ¥$',
