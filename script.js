@@ -50,6 +50,13 @@ const defaultSongs = [
         'Joe Miggle, ¥$',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default6.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default6.jpg?raw=true'
+    ),
+	new Song(
+        'default7',
+        'YOU DID KING',
+        'Joe Miggle, LoveAndLightTV',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default7.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default7.jpg?raw=true'
     )
 ];
 
