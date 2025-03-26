@@ -68,7 +68,7 @@ const defaultSongs = [
 	new Song(
         'default9',
         'Dreamy and the Gooner Land Pirates',
-        'Joe Miggle, Kyrie Irving',
+        'Joe Miggle, Dreamybull',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default9.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default9.jpg?raw=true'
     )
