@@ -78,6 +78,13 @@ const defaultSongs = [
         'Joe Miggle, LeBron James, Swamp Izzo',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default10.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default10.jpg?raw=true'
+    ),
+	new Song(
+        'default11',
+        'Siege Femboys',
+        'Toodles, Nicholas Stewart',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default11.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default11.jpg?raw=true'
     )
 ];
 
