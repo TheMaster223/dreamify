@@ -74,8 +74,8 @@ const defaultSongs = [
     ),
 	new Song(
         'default10',
-        'Lebron Raymone James',
-        'Joe Miggle, Lebron James, Swamp Izzo',
+        'LeBron Raymone James',
+        'Joe Miggle, LeBron James, Swamp Izzo',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default10.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default10.jpg?raw=true'
     )
