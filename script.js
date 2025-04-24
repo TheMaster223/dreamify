@@ -71,6 +71,13 @@ const defaultSongs = [
         'Joe Miggle, Dreamybull',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default9.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default9.jpg?raw=true'
+    ),
+	new Song(
+        'default10',
+        'Lebron Raymone James',
+        'Joe Miggle, Lebron James, Swamp Izzo',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default10.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default10.jpg?raw=true'
     )
 ];
 
