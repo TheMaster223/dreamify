@@ -85,6 +85,13 @@ const defaultSongs = [
         'Toodles, Nicholas Stewart',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default11.wav?raw=true',
         'https://github.com/TheMaster223/tobe/blob/master/assets/default11.jpg?raw=true'
+    ),
+	new Song(
+        'default12',
+        'Taste the Rainbow',
+        'Lil Skittle, Sam Fisher, Joe Miggle',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default12.wav?raw=true',
+        'https://github.com/TheMaster223/tobe/blob/master/assets/default12.jpg?raw=true'
     )
 ];
 
