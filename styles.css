@@ -886,3 +886,22 @@ body {
         gap: 8px;
     }
 }
+
+a:link {
+  color: #A855F7;
+}
+
+/* visited link */
+a:visited {
+  color: #A855F7;
+}
+
+/* mouse over link */
+a:hover {
+  color: #C084FC;
+}
+
+/* selected link */
+a:active {
+  color: #C084FC;
+}
