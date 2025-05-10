@@ -213,6 +213,7 @@ class MusicPlayer {
     }
 
     updatePlaylistInDB(playlist) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Playlist updates disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['playlists'], 'readwrite');
             const store = transaction.objectStore('playlists');
@@ -234,6 +235,7 @@ class MusicPlayer {
     }
 
     removePlaylistFromDB(id) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Playlist removal disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction1 = this.db.transaction(['playlists'], 'readonly');
             const playlistStore1 = transaction1.objectStore('playlists');
@@ -313,6 +315,9 @@ class MusicPlayer {
     }
 
     loadSongsForPlaylist(playlistId) {
+        if (this.isSmallScreen && playlistId !== 'home') {
+            playlistId = 'home'; // Force Home playlist on small screens
+        }
         this.currentPlaylistId = playlistId;
         this.updatePlaylistList();
         if (this.songSearchContainer) {
@@ -455,64 +460,75 @@ class MusicPlayer {
         };
     }
 
-    async importPlaylist(zipFile) {
-        try {
-            if (zipFile.size > 100 * 1024 * 1024) { // 100MB limit
-                throw new Error('ZIP file is too large (max 100MB).');
-            }
-            const zip = await JSZip.loadAsync(zipFile);
+    importPlaylist(zipFile) {
+        if (this.isSmallScreen) {
+            alert('Playlist import disabled on small screens.');
+            return;
+        }
+        JSZip.loadAsync(zipFile).then(zip => {
             const playlistFile = zip.file('playlist.json');
             if (!playlistFile) {
-                throw new Error('Invalid ZIP: playlist.json not found.');
+                alert('Invalid ZIP: playlist.json not found.');
+                return;
             }
-            const playlistJson = await playlistFile.async('string');
-            let playlistData;
-            try {
-                playlistData = JSON.parse(playlistJson);
-            } catch (err) {
-                throw new Error('Invalid ZIP: playlist.json is not valid JSON.');
-            }
-            if (!playlistData.name || !Array.isArray(playlistData.songs)) {
-                throw new Error('Invalid ZIP: playlist.json is missing required fields.');
-            }
-            const newSongIds = [];
-            // Process songs sequentially to avoid IndexedDB overload on iOS
-            for (const song of playlistData.songs) {
-                console.log(`Importing song: ${song.title}`);
-                const audioFile = zip.file(song.audioFile);
-                const artFile = zip.file(song.artFile);
-                if (!audioFile || !artFile) {
-                    console.error(`Missing audio or art file for song: ${song.title}`);
-                    throw new Error(`Missing audio or art file for song: ${song.title}`);
-                }
+            playlistFile.async('string').then(playlistJson => {
+                let playlistData;
                 try {
-                    const [audioBlob, artBlob] = await Promise.all([
+                    playlistData = JSON.parse(playlistJson);
+                } catch (err) {
+                    alert('Invalid ZIP: playlist.json is not valid JSON.');
+                    return;
+                }
+                if (!playlistData.name || !Array.isArray(playlistData.songs)) {
+                    alert('Invalid ZIP: playlist.json is missing required fields.');
+                    return;
+                }
+                const newSongIds = [];
+                const addSongPromises = playlistData.songs.map(song => {
+                    const audioFile = zip.file(song.audioFile);
+                    const artFile = zip.file(song.artFile);
+                    if (!audioFile || !artFile) {
+                        alert(`Missing audio or art file for song: ${song.title}`);
+                        return Promise.reject(new Error('Missing files'));
+                    }
+                    return Promise.all([
                         audioFile.async('blob'),
                         artFile.async('blob')
-                    ]);
-                    if (!audioBlob.type.startsWith('audio/') || !artBlob.type.startsWith('image/')) {
-                        console.error(`Invalid file types for song: ${song.title}`);
-                        throw new Error(`Invalid file types for song: ${song.title}`);
-                    }
-                    const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
-                    const songId = await this.addSongToDB(newSong);
-                    newSong.id = songId;
-                    newSongIds.push(songId);
-                } catch (err) {
-                    console.error(`Failed to import song ${song.title}:`, err);
-                    throw new Error(`Failed to import song ${song.title}: ${err.message}`);
-                }
-            }
-            const playlistId = await this.addPlaylistToDB(playlistData.name);
-            const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
-            this.playlists.push(newPlaylist);
-            await this.updatePlaylistInDB(newPlaylist);
-            this.updatePlaylistList();
-            this.loadSongsForPlaylist(playlistId);
-        } catch (err) {
-            console.error('Error importing playlist:', err);
-            alert(`Failed to import playlist: ${err.message}. Check console for details.`);
-        }
+                    ]).then(([audioBlob, artBlob]) => {
+                        const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
+                        return this.addSongToDB(newSong).then(songId => {
+                            newSong.id = songId;
+                            newSongIds.push(songId);
+                        });
+                    });
+                });
+                Promise.all(addSongPromises).then(() => {
+                    this.addPlaylistToDB(playlistData.name).then(playlistId => {
+                        const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
+                        this.playlists.push(newPlaylist);
+                        this.updatePlaylistInDB(newPlaylist).then(() => {
+                            this.updatePlaylistList();
+                            this.loadSongsForPlaylist(playlistId);
+                        }).catch(err => {
+                            console.error('Error updating imported playlist:', err);
+                            alert('Failed to save imported playlist. Check console for details.');
+                        });
+                    }).catch(err => {
+                        console.error('Error creating imported playlist:', err);
+                        alert('Failed to create imported playlist. Check console for details.');
+                    });
+                }).catch(err => {
+                    console.error('Error importing songs:', err);
+                    alert('Failed to import songs. Check console for details.');
+                });
+            }).catch(err => {
+                console.error('Error reading playlist.json:', err);
+                alert('Failed to read playlist.json. Check console for details.');
+            });
+        }).catch(err => {
+            console.error('Error loading ZIP:', err);
+            alert('Invalid ZIP file. Check console for details.');
+        });
     }
 
     renamePlaylist(playlistId, newName) {
@@ -542,10 +558,7 @@ class MusicPlayer {
     }
 
     reorderPlaylists(fromIndex, toIndex) {
-        if (this.isSmallScreen) {
-            alert('Playlist reordering disabled on small screens.');
-            return;
-        }
+        if (this.isSmallScreen) return;
         const adjustedFromIndex = fromIndex + 1;
         const adjustedToIndex = toIndex + 1;
         const [movedPlaylist] = this.playlists.splice(adjustedFromIndex, 1);
@@ -642,17 +655,19 @@ class MusicPlayer {
                 this.filterSongs();
             });
         }
-        const importPlaylistBtn = document.getElementById('importPlaylistBtn');
-        const importPlaylistInput = document.getElementById('importPlaylistInput');
-        if (importPlaylistBtn && importPlaylistInput) {
-            importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
-            importPlaylistInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    this.importPlaylist(file);
-                    importPlaylistInput.value = '';
-                }
-            });
+        if (!this.isSmallScreen) {
+            const importPlaylistBtn = document.getElementById('importPlaylistBtn');
+            const importPlaylistInput = document.getElementById('importPlaylistInput');
+            if (importPlaylistBtn && importPlaylistInput) {
+                importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
+                importPlaylistInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.importPlaylist(file);
+                        importPlaylistInput.value = '';
+                    }
+                });
+            }
         }
     }
 
@@ -677,18 +692,17 @@ class MusicPlayer {
 
     updatePlaylistList() {
         this.playlistList.innerHTML = '';
+        if (this.isSmallScreen) return; // Skip rendering playlists on small screens
         this.playlists.forEach((playlist, index) => {
             if (playlist.id === 'home') return;
             const li = document.createElement('li');
             li.className = this.currentPlaylistId === playlist.id ? 'active' : '';
-            if (!this.isSmallScreen) {
-                li.setAttribute('draggable', true);
-                li.dataset.index = index - 1;
-            }
+            li.setAttribute('draggable', true);
+            li.dataset.index = index - 1;
             const span = document.createElement('span');
             span.textContent = playlist.name;
             span.addEventListener('click', () => this.loadSongsForPlaylist(playlist.id));
-            if (!this.isSmallScreen) {
+            if (playlist.id !== 'home') {
                 span.addEventListener('dblclick', () => {
                     const modal = document.getElementById('renamePlaylistModal');
                     const input = document.getElementById('renamePlaylistName');
@@ -700,16 +714,13 @@ class MusicPlayer {
             }
             const buttonGroup = document.createElement('div');
             buttonGroup.className = 'button-group';
-            if (!this.isSmallScreen) {
-                const exportBtn = document.createElement('button');
-                exportBtn.textContent = 'Export';
-                exportBtn.className = 'export-btn';
-                exportBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.exportPlaylist(playlist.id);
-                });
-                buttonGroup.appendChild(exportBtn);
-            }
+            const exportBtn = document.createElement('button');
+            exportBtn.textContent = 'Export';
+            exportBtn.className = 'export-btn';
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.exportPlaylist(playlist.id);
+            });
             const removeBtn = document.createElement('button');
             removeBtn.textContent = 'Remove';
             removeBtn.className = 'remove-btn';
@@ -717,28 +728,27 @@ class MusicPlayer {
                 e.stopPropagation();
                 this.removePlaylist(playlist.id);
             });
-            buttonGroup.appendChild(removeBtn);
-            if (!this.isSmallScreen) {
-                li.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', li.dataset.index);
-                    li.classList.add('dragging');
-                });
-                li.addEventListener('dragend', () => {
-                    li.classList.remove('dragging');
-                });
-                li.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                });
-                li.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                    const toIndex = parseInt(li.dataset.index);
-                    if (fromIndex !== toIndex) {
-                        this.reorderPlaylists(fromIndex, toIndex);
-                    }
-                });
-            }
+            li.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', li.dataset.index);
+                li.classList.add('dragging');
+            });
+            li.addEventListener('dragend', () => {
+                li.classList.remove('dragging');
+            });
+            li.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            li.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const toIndex = parseInt(li.dataset.index);
+                if (fromIndex !== toIndex) {
+                    this.reorderPlaylists(fromIndex, toIndex);
+                }
+            });
             li.appendChild(span);
+            buttonGroup.appendChild(exportBtn);
+            buttonGroup.appendChild(removeBtn);
             li.appendChild(buttonGroup);
             this.playlistList.appendChild(li);
         });
@@ -844,6 +854,10 @@ class MusicPlayer {
     }
 
     removePlaylist(id) {
+        if (this.isSmallScreen) {
+            alert('Playlist removal disabled on small screens.');
+            return;
+        }
         if (id === 'home') {
             alert('Cannot remove the Home playlist.');
             return;
@@ -865,7 +879,8 @@ class MusicPlayer {
     }
 
     reorderSongs(fromIndex, toIndex) {
-        if (this.currentPlaylistId === 'home' && !this.isSmallScreen) return;
+        if (this.isSmallScreen) return;
+        if (this.currentPlaylistId === 'home') return;
         const playlist = this.playlists.find(p => p.id === this.currentPlaylistId);
         if (!playlist) return;
         const [movedSong] = this.songs.splice(fromIndex, 1);
@@ -894,7 +909,7 @@ class MusicPlayer {
         this.songs.forEach((song, index) => {
             const songElement = document.createElement('div');
             songElement.className = 'song-item';
-            if (this.currentPlaylistId !== 'home' || this.isSmallScreen) {
+            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
                 songElement.setAttribute('draggable', true);
             }
             const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
@@ -941,7 +956,7 @@ class MusicPlayer {
                     this.play();
                 }
             });
-            if (this.currentPlaylistId !== 'home' || this.isSmallScreen) {
+            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
                 songElement.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', index);
                     songElement.classList.add('dragging');

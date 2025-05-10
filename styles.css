@@ -11,16 +11,6 @@ body {
     overflow: hidden;
 }
 
-a:link,
-a:visited {
-    color: #A855F7;
-}
-
-a:hover,
-a:active {
-    color: #C084FC;
-}
-
 .container {
     display: flex;
     height: calc(100vh - 90px);
@@ -752,19 +742,17 @@ a:active {
     }
 
     .sidebar h3,
-    .action-btn:not(#importPlaylistBtn),
-    .settings-btn:not(#importPlaylistBtn),
-    #songModal,
-    #editSongModal,
-    #playlistModal,
-    #renamePlaylistModal {
-        display: none; /* Hide non-import actions and modals */
+    .sidebar ul,
+    .action-btn,
+    .settings-btn,
+    #importPlaylistInput {
+        display: none; /* Hide playlist list and action/settings buttons */
     }
 
     .nav-item.home-playlist {
         padding: 6px 10px;
         font-size: 14px;
-        cursor: pointer;
+        cursor: pointer; /* Ensure Home is clickable */
     }
 
     .search-container {
@@ -786,34 +774,6 @@ a:active {
         font-size: 12px;
     }
 
-    .sidebar ul {
-        margin: 8px 0;
-    }
-
-    .sidebar li {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
-    .sidebar li .button-group {
-        opacity: 1; /* Always show remove button on mobile */
-    }
-
-    .sidebar li button.remove-btn {
-        display: block; /* Show remove button on mobile */
-        padding: 4px 8px;
-        font-size: 10px;
-    }
-
-    .sidebar li button.export-btn {
-        display: none; /* Hide export button on mobile */
-    }
-
-    #importPlaylistBtn,
-    #importPlaylistInput {
-        display: flex; /* Keep import button/input visible */
-    }
-
     .main {
         padding: 16px;
         flex: none;
@@ -827,7 +787,7 @@ a:active {
     .song-item {
         padding: 8px;
         margin: 6px 0;
-        cursor: pointer;
+        cursor: pointer; /* Allow song selection */
     }
 
     .song-item img {
@@ -845,13 +805,8 @@ a:active {
     }
 
     .song-item .button-group,
-    .song-item button.remove-btn,
-    .song-item button.edit-btn {
-        display: none; /* Hide song remove/edit buttons */
-    }
-
     .song-item[draggable="true"] {
-        cursor: move; /* Enable drag-and-drop */
+        display: none; /* Disable buttons and drag-and-drop */
     }
 
     .player {
@@ -908,28 +863,50 @@ a:active {
     }
 
     .controls button {
-        font-size: 20px;
+        font-size: 18px;
     }
 
     .progress {
-        max-width: 100%;
+        max-width: 100px;
     }
 
     .time {
-        font-size: 10px;
+        font-size: 8px;
+        margin-bottom: 2px;
+    }
+
+    .volume {
+        display: flex;
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .volume-icon {
+        font-size: 14px;
+        margin-right: 6px;
     }
 
     .volume {
         width: auto;
-        flex: 0 1 auto;
-    }
-
-    .volume-icon {
-        font-size: 16px;
-        margin-right: 8px;
     }
 
     #volumeSlider {
-        width: 80px;
+        width: 60px;
     }
+
+    .modal,
+    .modal-content,
+    .song-form {
+        display: none; /* Disable all modals on small screens */
+    }
+}
+
+a:link,
+a:visited {
+    color: #A855F7;
+}
+
+a:hover,
+a:active {
+    color: #C084FC;
 }
