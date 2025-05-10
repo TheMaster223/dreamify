@@ -13,84 +13,84 @@ const defaultSongs = [
         'default1',
         'Just the Two of Us',
         'Dreamybull, Bill Withers, Grover Washington, Jr.',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default1.mp3?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default1.mp3',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default1.jpg'
     ),
     new Song(
         'default2',
         'E-GIRLS ARE RUINING MY LIFE!',
         'CORPSE, Savage Ga$p',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default2.mp3?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default2.mp3',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default2.jpg'
     ),
     new Song(
         'default3',
         'Whiskey',
         'Morgan Wallen, Luke Combs, Logan Richardson',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default3.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default3.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default3.jpg'
     ),
     new Song(
         'default4',
         'Deliway',
         'Tobelious, Joe Miggle',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default4.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default4.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default4.jpg'
     ),
     new Song(
         'default5',
         "Ballin'",
         'Animan Studios, Mustard, Roddy Ricch',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default5.mp3?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default5.mp3',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default5.jpg'
     ),
 	new Song(
         'default6',
         'VULTURES 3 LEAK',
         'Joe Miggle, ¥$',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default6.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default6.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default6.jpg'
     ),
 	new Song(
         'default7',
         'YOU DID KING',
         'Joe Miggle, LoveAndLightTV',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default7.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default7.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default7.jpg'
     ),
 	new Song(
         'default8',
         'The Gooner Thoughts Won',
         'Joe Miggle, Kyrie Irving',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default8.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default8.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default8.jpg'
     ),
 	new Song(
         'default9',
         'Dreamy and the Gooner Land Pirates',
         'Joe Miggle, Dreamybull',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default9.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default9.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default9.jpg'
     ),
 	new Song(
         'default10',
         'LeBron Raymone James',
         'Joe Miggle, LeBron James, Swamp Izzo',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default10.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default10.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default10.jpg'
     ),
 	new Song(
         'default11',
         'Siege Femboys',
         'Toodles, Nicholas Stewart',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default11.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default11.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default11.jpg'
     ),
 	new Song(
         'default12',
         'Taste the Rainbow',
         'Lil Skittle, Sam Fisher, Joe Miggle',
-        'https://github.com/TheMaster223/tobe/blob/master/assets/default12.wav?raw=true',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.jpg'
     )
 ];
