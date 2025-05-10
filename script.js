@@ -474,7 +474,7 @@ class MusicPlayer {
                 return;
             }
             playlistFile.async('string').then(csvContent => {
-                // Parse CSV
+                // Parse CSV synchronously
                 const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line);
                 if (lines.length < 2) {
                     alert('Invalid CSV: Missing playlist name or song data.');
@@ -495,12 +495,14 @@ class MusicPlayer {
                 // Parse song rows
                 const songs = [];
                 for (let i = 2; i < lines.length; i++) {
-                    // Simple CSV parsing with proper handling of quoted fields
                     const fields = [];
                     let currentField = '';
                     let inQuotes = false;
-                    for (let char of lines[i] + ',') {
-                        if (char === '"' && lines[i][arguments.callee.caller.arguments[0] - 1] !== '\\') {
+                    // Add a trailing comma to ensure the last field is captured
+                    const chars = lines[i] + ',';
+                    for (let j = 0; j < chars.length; j++) {
+                        const char = chars[j];
+                        if (char === '"' && (j === 0 || chars[j - 1] !== '\\')) {
                             inQuotes = !inQuotes;
                         } else if (char === ',' && !inQuotes) {
                             fields.push(currentField);
@@ -509,13 +511,19 @@ class MusicPlayer {
                             currentField += char;
                         }
                     }
+                    // Process fields: remove outer quotes and handle escaped quotes
                     if (fields.length === 4) {
-                        songs.push({
-                            title: fields[0].replace(/""/g, '"').trim(),
-                            artist: fields[1].replace(/""/g, '"').trim(),
-                            audioFile: fields[2].trim(),
-                            artFile: fields[3].trim()
-                        });
+                        const processedFields = fields.map(field =>
+                            field.replace(/^"|"$/g, '').replace(/""/g, '"').trim()
+                        );
+                        if (processedFields[0] && processedFields[2] && processedFields[3]) {
+                            songs.push({
+                                title: processedFields[0],
+                                artist: processedFields[1],
+                                audioFile: processedFields[2],
+                                artFile: processedFields[3]
+                            });
+                        }
                     }
                 }
                 if (songs.length === 0) {
