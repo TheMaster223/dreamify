@@ -483,8 +483,7 @@ class MusicPlayer {
                     alert('Invalid ZIP: playlist.json is missing required fields.');
                     return;
                 }
-                const newSongIds = [];
-                const addSongPromises = playlistData.songs.map(song => {
+                const songPromises = playlistData.songs.map(song => {
                     const audioFile = zip.file(song.audioFile);
                     const artFile = zip.file(song.artFile);
                     if (!audioFile || !artFile) {
@@ -496,13 +495,14 @@ class MusicPlayer {
                         artFile.async('blob')
                     ]).then(([audioBlob, artBlob]) => {
                         const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
-                        return this.addSongToDB(newSong).then(songId => {
-                            newSong.id = songId;
-                            newSongIds.push(songId);
-                        });
+                        return this.addSongToDB(newSong).then(songId => ({
+                            id: songId,
+                            song: newSong
+                        }));
                     });
                 });
-                Promise.all(addSongPromises).then(() => {
+                Promise.all(songPromises).then(results => {
+                    const newSongIds = results.map(result => result.id);
                     this.addPlaylistToDB(playlistData.name).then(playlistId => {
                         const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
                         this.playlists.push(newPlaylist);
