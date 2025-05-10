@@ -65,6 +65,21 @@
             </div>
         </div>
     </div>
+    <div class="modal hidden" id="editSongModal">
+        <div class="modal-content song-form" id="editSongForm">
+            <h2>Edit Song</h2>
+            <input type="text" id="editSongTitle" placeholder="Song Title">
+            <input type="text" id="editArtist" placeholder="Artist">
+            <input type="file" id="editAudioFile" accept="audio/*">
+            <input type="file" id="editAlbumArt" accept="image/*">
+            <input type="hidden" id="editSongId">
+            <input type="hidden" id="editSongPlaylistId">
+            <div class="modal-actions">
+                <button id="submitEditSong">Save Changes</button>
+                <button id="cancelEditSongForm">Cancel</button>
+            </div>
+        </div>
+    </div>
     <div class="modal hidden" id="playlistModal">
         <div class="modal-content song-form" id="createPlaylistForm">
             <h2>Create a New Playlist</h2>
@@ -72,6 +87,17 @@
             <div class="modal-actions">
                 <button id="submitPlaylist">Create</button>
                 <button id="cancelPlaylistForm">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal hidden" id="renamePlaylistModal">
+        <div class="modal-content song-form" id="renamePlaylistForm">
+            <h2>Rename Playlist</h2>
+            <input type="text" id="renamePlaylistName" placeholder="New Playlist Name">
+            <input type="hidden" id="renamePlaylistId">
+            <div class="modal-actions">
+                <button id="submitRenamePlaylist">Save</button>
+                <button id="cancelRenamePlaylistForm">Cancel</button>
             </div>
         </div>
     </div>

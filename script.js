@@ -131,6 +131,7 @@ class MusicPlayer {
         this.songSearchContainer = document.getElementById('songSearchContainer');
         this.songSearch = document.getElementById('songSearch');
         this.clearSongSearch = document.getElementById('clearSongSearch');
+        this.isSmallScreen = window.matchMedia('(max-width: 768px)').matches;
         this.db = null;
         this.initDB()
             .then(() => this.loadPlaylistsFromDB())
@@ -146,7 +147,7 @@ class MusicPlayer {
 
     initDB() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('MusicPlayerDB', 2);
+            const request = indexedDB.open('MusicPlayerDB', 3);
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
                 if (!db.objectStoreNames.contains('songs')) {
@@ -168,6 +169,7 @@ class MusicPlayer {
     }
 
     addSongToDB(song) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Song addition disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['songs'], 'readwrite');
             const store = transaction.objectStore('songs');
@@ -182,7 +184,25 @@ class MusicPlayer {
         });
     }
 
+    updateSongInDB(song) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Song editing disabled on small screens'));
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['songs'], 'readwrite');
+            const store = transaction.objectStore('songs');
+            const request = store.put({
+                id: song.id,
+                title: song.title,
+                artist: song.artist,
+                audioBlob: song.audioUrl,
+                artBlob: song.artUrl
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     addPlaylistToDB(name) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Playlist creation disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['playlists'], 'readwrite');
             const store = transaction.objectStore('playlists');
@@ -193,6 +213,7 @@ class MusicPlayer {
     }
 
     updatePlaylistInDB(playlist) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Playlist updates disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['playlists'], 'readwrite');
             const store = transaction.objectStore('playlists');
@@ -203,6 +224,7 @@ class MusicPlayer {
     }
 
     removeSongFromDB(id) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Song removal disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['songs'], 'readwrite');
             const store = transaction.objectStore('songs');
@@ -213,6 +235,7 @@ class MusicPlayer {
     }
 
     removePlaylistFromDB(id) {
+        if (this.isSmallScreen) return Promise.reject(new Error('Playlist removal disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction1 = this.db.transaction(['playlists'], 'readonly');
             const playlistStore1 = transaction1.objectStore('playlists');
@@ -245,6 +268,7 @@ class MusicPlayer {
     }
 
     resetAll() {
+        if (this.isSmallScreen) return Promise.reject(new Error('Reset disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['playlists', 'songs'], 'readwrite');
             const playlistStore = transaction.objectStore('playlists');
@@ -291,6 +315,9 @@ class MusicPlayer {
     }
 
     loadSongsForPlaylist(playlistId) {
+        if (this.isSmallScreen && playlistId !== 'home') {
+            playlistId = 'home'; // Force Home playlist on small screens
+        }
         this.currentPlaylistId = playlistId;
         this.updatePlaylistList();
         if (this.songSearchContainer) {
@@ -359,6 +386,10 @@ class MusicPlayer {
     }
 
     viewStorage() {
+        if (this.isSmallScreen) {
+            alert('Storage view disabled on small screens.');
+            return;
+        }
         const transaction = this.db.transaction(['playlists', 'songs'], 'readonly');
         const playlistStore = transaction.objectStore('playlists');
         const songStore = transaction.objectStore('songs');
@@ -382,6 +413,10 @@ class MusicPlayer {
     }
 
     exportPlaylist(playlistId) {
+        if (this.isSmallScreen) {
+            alert('Playlist export disabled on small screens.');
+            return;
+        }
         if (playlistId === 'home') {
             alert('Cannot export the Home playlist.');
             return;
@@ -426,6 +461,10 @@ class MusicPlayer {
     }
 
     importPlaylist(zipFile) {
+        if (this.isSmallScreen) {
+            alert('Playlist import disabled on small screens.');
+            return;
+        }
         JSZip.loadAsync(zipFile).then(zip => {
             const playlistFile = zip.file('playlist.json');
             if (!playlistFile) {
@@ -492,6 +531,92 @@ class MusicPlayer {
         });
     }
 
+    renamePlaylist(playlistId, newName) {
+        if (this.isSmallScreen) {
+            alert('Playlist renaming disabled on small screens.');
+            return;
+        }
+        if (playlistId === 'home') {
+            alert('Cannot rename the Home playlist.');
+            return;
+        }
+        const playlist = this.playlists.find(p => p.id === playlistId);
+        if (!playlist) {
+            alert('Playlist not found.');
+            return;
+        }
+        playlist.name = newName;
+        this.updatePlaylistInDB(playlist).then(() => {
+            this.updatePlaylistList();
+            if (this.currentPlaylistId === playlistId) {
+                this.currentPlaylistName.textContent = newName;
+            }
+        }).catch(err => {
+            console.error('Error renaming playlist:', err);
+            alert('Failed to rename playlist. Check console for details.');
+        });
+    }
+
+    reorderPlaylists(fromIndex, toIndex) {
+        if (this.isSmallScreen) return;
+        const adjustedFromIndex = fromIndex + 1;
+        const adjustedToIndex = toIndex + 1;
+        const [movedPlaylist] = this.playlists.splice(adjustedFromIndex, 1);
+        this.playlists.splice(adjustedToIndex, 0, movedPlaylist);
+        this.updatePlaylistList();
+        const customPlaylists = this.playlists.filter(p => p.id !== 'home');
+        customPlaylists.forEach(playlist => {
+            this.updatePlaylistInDB(playlist).catch(err => {
+                console.error('Error updating playlist order in DB:', err);
+                alert('Failed to save new playlist order. Check console for details.');
+            });
+        });
+    }
+
+    editSong(songId, playlistId, newTitle, newArtist, newAudioFile, newAlbumArt) {
+        if (this.isSmallScreen) {
+            alert('Song editing disabled on small screens.');
+            return;
+        }
+        if (playlistId === 'home') {
+            alert('Cannot edit songs in the Home playlist.');
+            return;
+        }
+        const playlist = this.playlists.find(p => p.id === playlistId);
+        if (!playlist) {
+            alert('Playlist not found.');
+            return;
+        }
+        const songIndex = this.songs.findIndex(s => s.id === songId);
+        const allSongsIndex = this.allSongs.findIndex(s => s.id === songId);
+        if (songIndex === -1 || allSongsIndex === -1) {
+            alert('Song not found.');
+            return;
+        }
+        const song = this.songs[songIndex];
+        song.title = newTitle || song.title;
+        song.artist = newArtist || song.artist;
+        song.audioUrl = newAudioFile || song.audioUrl;
+        song.artUrl = newAlbumArt || song.artUrl;
+        this.updateSongInDB(song).then(() => {
+            this.songs[songIndex] = song;
+            this.allSongs[allSongsIndex] = song;
+            this.renderSongList();
+            if (this.currentSong && this.currentSong.id === songId) {
+                this.currentTitle.textContent = song.title;
+                this.currentArtist.textContent = song.artist;
+                this.currentArt.src = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
+                this.audio.src = typeof song.audioUrl === 'string' ? song.audioUrl : URL.createObjectURL(song.audioUrl);
+                if (this.isPlaying) {
+                    this.audio.play().catch(err => console.error('Error playing audio after edit:', err));
+                }
+            }
+        }).catch(err => {
+            console.error('Error editing song:', err);
+            alert('Failed to edit song. Check console for details.');
+        });
+    }
+
     setupEventListeners() {
         if (this.playPauseBtn) {
             this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
@@ -530,17 +655,19 @@ class MusicPlayer {
                 this.filterSongs();
             });
         }
-        const importPlaylistBtn = document.getElementById('importPlaylistBtn');
-        const importPlaylistInput = document.getElementById('importPlaylistInput');
-        if (importPlaylistBtn && importPlaylistInput) {
-            importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
-            importPlaylistInput.addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    this.importPlaylist(file);
-                    importPlaylistInput.value = '';
-                }
-            });
+        if (!this.isSmallScreen) {
+            const importPlaylistBtn = document.getElementById('importPlaylistBtn');
+            const importPlaylistInput = document.getElementById('importPlaylistInput');
+            if (importPlaylistBtn && importPlaylistInput) {
+                importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
+                importPlaylistInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        this.importPlaylist(file);
+                        importPlaylistInput.value = '';
+                    }
+                });
+            }
         }
     }
 
@@ -565,20 +692,28 @@ class MusicPlayer {
 
     updatePlaylistList() {
         this.playlistList.innerHTML = '';
-        this.playlists.forEach(playlist => {
+        if (this.isSmallScreen) return; // Skip rendering playlists on small screens
+        this.playlists.forEach((playlist, index) => {
             if (playlist.id === 'home') return;
             const li = document.createElement('li');
             li.className = this.currentPlaylistId === playlist.id ? 'active' : '';
+            li.setAttribute('draggable', true);
+            li.dataset.index = index - 1;
             const span = document.createElement('span');
             span.textContent = playlist.name;
             span.addEventListener('click', () => this.loadSongsForPlaylist(playlist.id));
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'Remove';
-            removeBtn.className = 'remove-btn';
-            removeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removePlaylist(playlist.id);
-            });
+            if (playlist.id !== 'home') {
+                span.addEventListener('dblclick', () => {
+                    const modal = document.getElementById('renamePlaylistModal');
+                    const input = document.getElementById('renamePlaylistName');
+                    const idInput = document.getElementById('renamePlaylistId');
+                    input.value = playlist.name;
+                    idInput.value = playlist.id;
+                    openModal(modal);
+                });
+            }
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
             const exportBtn = document.createElement('button');
             exportBtn.textContent = 'Export';
             exportBtn.className = 'export-btn';
@@ -586,9 +721,35 @@ class MusicPlayer {
                 e.stopPropagation();
                 this.exportPlaylist(playlist.id);
             });
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remove';
+            removeBtn.className = 'remove-btn';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removePlaylist(playlist.id);
+            });
+            li.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', li.dataset.index);
+                li.classList.add('dragging');
+            });
+            li.addEventListener('dragend', () => {
+                li.classList.remove('dragging');
+            });
+            li.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+            li.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                const toIndex = parseInt(li.dataset.index);
+                if (fromIndex !== toIndex) {
+                    this.reorderPlaylists(fromIndex, toIndex);
+                }
+            });
             li.appendChild(span);
-            li.appendChild(exportBtn);
-            li.appendChild(removeBtn);
+            buttonGroup.appendChild(exportBtn);
+            buttonGroup.appendChild(removeBtn);
+            li.appendChild(buttonGroup);
             this.playlistList.appendChild(li);
         });
         document.getElementById('playlistAddSelect').innerHTML = '';
@@ -609,6 +770,10 @@ class MusicPlayer {
     }
 
     addSong(song, playlistId) {
+        if (this.isSmallScreen) {
+            alert('Song addition disabled on small screens.');
+            return;
+        }
         if (playlistId === 'home') {
             alert('Cannot add songs to the Home playlist.');
             return;
@@ -633,6 +798,10 @@ class MusicPlayer {
     }
 
     removeSong(index) {
+        if (this.isSmallScreen) {
+            alert('Song removal disabled on small screens.');
+            return;
+        }
         const song = this.songs[index];
         if (this.currentPlaylistId === 'home') {
             alert('Cannot remove songs from the Home playlist.');
@@ -671,6 +840,10 @@ class MusicPlayer {
     }
 
     addPlaylist(name) {
+        if (this.isSmallScreen) {
+            alert('Playlist creation disabled on small screens.');
+            return;
+        }
         this.addPlaylistToDB(name).then(id => {
             const newPlaylist = { id, name, songIds: [] };
             this.playlists.push(newPlaylist);
@@ -681,6 +854,10 @@ class MusicPlayer {
     }
 
     removePlaylist(id) {
+        if (this.isSmallScreen) {
+            alert('Playlist removal disabled on small screens.');
+            return;
+        }
         if (id === 'home') {
             alert('Cannot remove the Home playlist.');
             return;
@@ -702,6 +879,7 @@ class MusicPlayer {
     }
 
     reorderSongs(fromIndex, toIndex) {
+        if (this.isSmallScreen) return;
         if (this.currentPlaylistId === 'home') return;
         const playlist = this.playlists.find(p => p.id === this.currentPlaylistId);
         if (!playlist) return;
@@ -731,7 +909,9 @@ class MusicPlayer {
         this.songs.forEach((song, index) => {
             const songElement = document.createElement('div');
             songElement.className = 'song-item';
-            songElement.setAttribute('draggable', this.currentPlaylistId !== 'home');
+            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
+                songElement.setAttribute('draggable', true);
+            }
             const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
             songElement.innerHTML = `
                 <img src="${artUrl}" alt="Album Art">
@@ -739,23 +919,44 @@ class MusicPlayer {
                     <h3>${song.title}</h3>
                     <p>${song.artist}</p>
                 </div>
+                <div class="button-group"></div>
             `;
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'Remove';
-            removeBtn.className = 'remove-btn';
-            removeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removeSong(index);
-            });
-            songElement.appendChild(removeBtn);
+            const buttonGroup = songElement.querySelector('.button-group');
+            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove';
+                removeBtn.className = 'remove-btn';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removeSong(index);
+                });
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.className = 'edit-btn';
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const modal = document.getElementById('editSongModal');
+                    const titleInput = document.getElementById('editSongTitle');
+                    const artistInput = document.getElementById('editArtist');
+                    const idInput = document.getElementById('editSongId');
+                    const playlistIdInput = document.getElementById('editSongPlaylistId');
+                    titleInput.value = song.title;
+                    artistInput.value = song.artist;
+                    idInput.value = song.id;
+                    playlistIdInput.value = this.currentPlaylistId;
+                    openModal(modal);
+                });
+                buttonGroup.appendChild(editBtn);
+                buttonGroup.appendChild(removeBtn);
+            }
             songElement.addEventListener('click', (e) => {
-                if (e.target !== removeBtn) {
+                if (!e.target.classList.contains('remove-btn') && !e.target.classList.contains('edit-btn')) {
                     this.currentIndex = index;
                     this.loadSong();
                     this.play();
                 }
             });
-            if (this.currentPlaylistId !== 'home') {
+            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
                 songElement.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', index);
                     songElement.classList.add('dragging');
@@ -848,11 +1049,13 @@ class MusicPlayer {
     updateProgress() {
         const current = this.audio.currentTime;
         const duration = this.audio.duration;
-        const progressPercent = (current / duration) * 100 || 0;
-        this.progressBar.value = progressPercent;
-        this.progressBar.style.setProperty('--value', progressPercent);
-        this.currentTime.textContent = this.formatTime(current);
-        this.duration.textContent = this.formatTime(duration);
+        if (duration) {
+            const progress = (current / duration) * 100;
+            this.progressBar.value = progress;
+            this.progressBar.style.setProperty('--value', progress);
+            this.currentTime.textContent = this.formatTime(current);
+            this.duration.textContent = this.formatTime(duration);
+        }
     }
 
     seek() {
@@ -876,11 +1079,19 @@ try {
     const addSongBtn = document.getElementById('addSongBtn');
     const submitSong = document.getElementById('submitSong');
     const cancelSongForm = document.getElementById('cancelSongForm');
+    const editSongModal = document.getElementById('editSongModal');
+    const editSongForm = document.getElementById('editSongForm');
+    const submitEditSong = document.getElementById('submitEditSong');
+    const cancelEditSongForm = document.getElementById('cancelEditSongForm');
     const playlistModal = document.getElementById('playlistModal');
     const createPlaylistForm = document.getElementById('createPlaylistForm');
     const createPlaylistBtn = document.getElementById('createPlaylistBtn');
     const submitPlaylist = document.getElementById('submitPlaylist');
     const cancelPlaylistForm = document.getElementById('cancelPlaylistForm');
+    const renamePlaylistModal = document.getElementById('renamePlaylistModal');
+    const renamePlaylistForm = document.getElementById('renamePlaylistForm');
+    const submitRenamePlaylist = document.getElementById('submitRenamePlaylist');
+    const cancelRenamePlaylistForm = document.getElementById('cancelRenamePlaylistForm');
     const resetAllBtn = document.getElementById('resetAllBtn');
     const viewStorageBtn = document.getElementById('viewStorageBtn');
     const homeNavItem = document.getElementById('homeNavItem');
@@ -891,15 +1102,35 @@ try {
     }
 
     function openModal(modal) {
+        if (player.isSmallScreen) {
+            alert('Modal interactions disabled on small screens.');
+            return;
+        }
         modal.classList.remove('hidden');
         modal.classList.add('visible');
     }
 
-    if (addSongBtn) {
+    function clearSongForm() {
+        document.getElementById('songTitle').value = '';
+        document.getElementById('artist').value = '';
+        document.getElementById('audioFile').value = '';
+        document.getElementById('albumArt').value = '';
+    }
+
+    function clearEditSongForm() {
+        document.getElementById('editSongTitle').value = '';
+        document.getElementById('editArtist').value = '';
+        document.getElementById('editAudioFile').value = '';
+        document.getElementById('editAlbumArt').value = '';
+        document.getElementById('editSongId').value = '';
+        document.getElementById('editSongPlaylistId').value = '';
+    }
+
+    if (addSongBtn && !player.isSmallScreen) {
         addSongBtn.addEventListener('click', () => openModal(songModal));
     }
 
-    if (submitSong) {
+    if (submitSong && !player.isSmallScreen) {
         submitSong.addEventListener('click', () => {
             const title = document.getElementById('songTitle').value;
             const artist = document.getElementById('artist').value;
@@ -917,86 +1148,106 @@ try {
         });
     }
 
-    if (cancelSongForm) {
+    if (cancelSongForm && !player.isSmallScreen) {
         cancelSongForm.addEventListener('click', () => {
             closeModal(songModal);
             clearSongForm();
         });
     }
 
-    if (createPlaylistBtn) {
+    if (submitEditSong && !player.isSmallScreen) {
+        submitEditSong.addEventListener('click', () => {
+            const title = document.getElementById('editSongTitle').value;
+            const artist = document.getElementById('editArtist').value;
+            const audioFile = document.getElementById('editAudioFile').files[0];
+            const albumArt = document.getElementById('editAlbumArt').files[0];
+            const songId = parseInt(document.getElementById('editSongId').value);
+            const playlistId = parseInt(document.getElementById('editSongPlaylistId').value);
+            if (title || artist || audioFile || albumArt) {
+                player.editSong(songId, playlistId, title, artist, audioFile, albumArt);
+                closeModal(editSongModal);
+                clearEditSongForm();
+            } else {
+                alert('Please provide at least one field to update.');
+            }
+        });
+    }
+
+    if (cancelEditSongForm && !player.isSmallScreen) {
+        cancelEditSongForm.addEventListener('click', () => {
+            closeModal(editSongModal);
+            clearEditSongForm();
+        });
+    }
+
+    if (createPlaylistBtn && !player.isSmallScreen) {
         createPlaylistBtn.addEventListener('click', () => openModal(playlistModal));
     }
 
-    if (submitPlaylist) {
+    if (submitPlaylist && !player.isSmallScreen) {
         submitPlaylist.addEventListener('click', () => {
             const name = document.getElementById('playlistName').value;
             if (name) {
                 player.addPlaylist(name);
                 closeModal(playlistModal);
-                clearPlaylistForm();
+                document.getElementById('playlistName').value = '';
             } else {
                 alert('Please enter a playlist name.');
             }
         });
     }
 
-    if (cancelPlaylistForm) {
+    if (cancelPlaylistForm && !player.isSmallScreen) {
         cancelPlaylistForm.addEventListener('click', () => {
             closeModal(playlistModal);
-            clearPlaylistForm();
+            document.getElementById('playlistName').value = '';
         });
     }
 
-    if (resetAllBtn) {
-        resetAllBtn.addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset everything? This will delete all playlists and songs except the Home playlist.')) {
-                player.resetAll().catch(err => console.error('Error resetting:', err));
+    if (submitRenamePlaylist && !player.isSmallScreen) {
+        submitRenamePlaylist.addEventListener('click', () => {
+            const newName = document.getElementById('renamePlaylistName').value;
+            const playlistId = parseInt(document.getElementById('renamePlaylistId').value);
+            if (newName && playlistId) {
+                player.renamePlaylist(playlistId, newName);
+                closeModal(renamePlaylistModal);
+                document.getElementById('renamePlaylistName').value = '';
+                document.getElementById('renamePlaylistId').value = '';
+            } else {
+                alert('Please enter a new playlist name.');
             }
         });
     }
 
-    if (viewStorageBtn) {
+    if (cancelRenamePlaylistForm && !player.isSmallScreen) {
+        cancelRenamePlaylistForm.addEventListener('click', () => {
+            closeModal(renamePlaylistModal);
+            document.getElementById('renamePlaylistName').value = '';
+            document.getElementById('renamePlaylistId').value = '';
+        });
+    }
+
+    if (resetAllBtn && !player.isSmallScreen) {
+        resetAllBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all playlists and songs? This action cannot be undone.')) {
+                player.resetAll().then(() => {
+                    alert('All playlists and songs have been reset.');
+                }).catch(err => {
+                    console.error('Error resetting all:', err);
+                    alert('Failed to reset. Check console for details.');
+                });
+            }
+        });
+    }
+
+    if (viewStorageBtn && !player.isSmallScreen) {
         viewStorageBtn.addEventListener('click', () => player.viewStorage());
     }
 
     if (homeNavItem) {
         homeNavItem.addEventListener('click', () => player.loadSongsForPlaylist('home'));
     }
-
-    [songModal, playlistModal].forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal(modal);
-                if (modal === songModal) clearSongForm();
-                if (modal === playlistModal) clearPlaylistForm();
-            }
-        });
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            if (!songModal.classList.contains('hidden')) {
-                closeModal(songModal);
-                clearSongForm();
-            }
-            if (!playlistModal.classList.contains('hidden')) {
-                closeModal(playlistModal);
-                clearPlaylistForm();
-            }
-        }
-    });
-
-    function clearSongForm() {
-        document.getElementById('songTitle').value = '';
-        document.getElementById('artist').value = '';
-        document.getElementById('audioFile').value = '';
-        document.getElementById('albumArt').value = '';
-    }
-
-    function clearPlaylistForm() {
-        document.getElementById('playlistName').value = '';
-    }
 } catch (err) {
-    console.error('Error initializing player or setting up event listeners:', err);
+    console.error('Error initializing music player:', err);
+    alert('Failed to initialize the music player. Please check the console for details.');
 }

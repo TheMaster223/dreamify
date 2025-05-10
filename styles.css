@@ -17,7 +17,7 @@ body {
 }
 
 .sidebar {
-    width: 250px;
+    width: 300px;
     background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%);
     padding: 24px;
     overflow-y: auto;
@@ -218,7 +218,6 @@ body {
 
 .sidebar li {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
     background: transparent;
@@ -241,16 +240,33 @@ body {
     background: #A855F7;
 }
 
+.sidebar li.dragging {
+    opacity: 0.5;
+    background: #2a2a2a;
+}
+
 .sidebar li span {
-    flex-grow: 1;
+    flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.sidebar li button.remove-btn {
-    margin: 0;
-    padding: 4px 8px;
+.sidebar li .button-group {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar li:hover .button-group {
+    opacity: 1;
+}
+
+.sidebar li button.remove-btn,
+.sidebar li button.export-btn {
+    margin-left: 6px;
+    padding: 6px 12px;
     background: #6B7280;
     border: none;
     color: #fff;
@@ -261,25 +277,9 @@ body {
     transition: background 0.2s;
 }
 
-.sidebar li button.remove-btn:hover {
-    background: #9CA3AF;
-}
-
-.sidebar li button.export-btn {
-    margin: 0 4px;
-    padding: 4px 8px;
-    background: #A855F7;
-    border: none;
-    color: #fff;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-
+.sidebar li button.remove-btn:hover,
 .sidebar li button.export-btn:hover {
-    background: #C084FC;
+    background: #A855F7;
 }
 
 .main {
@@ -483,7 +483,6 @@ body {
 
 .song-item div {
     flex: 1;
-    overflow: hidden;
 }
 
 .song-item h3 {
@@ -504,8 +503,20 @@ body {
     text-overflow: ellipsis;
 }
 
-.song-item .remove-btn {
-    margin-left: 12px;
+.song-item .button-group {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.song-item:hover .button-group {
+    opacity: 1;
+}
+
+.song-item button.remove-btn,
+.song-item button.edit-btn {
+    margin-left: 6px;
     padding: 6px 12px;
     background: #6B7280;
     border: none;
@@ -517,8 +528,9 @@ body {
     transition: background 0.2s;
 }
 
-.song-item .remove-btn:hover {
-    background: #9CA3AF;
+.song-item button.remove-btn:hover,
+.song-item button.edit-btn:hover {
+    background: #A855F7;
 }
 
 .player {
@@ -729,41 +741,22 @@ body {
         font-size: 18px;
     }
 
-    .sidebar h3 {
-        font-size: 10px;
-        margin: 16px 0 8px;
-    }
-
-    .nav-item {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
+    .sidebar h3,
+    .sidebar ul,
     .action-btn,
-    .settings-btn {
+    .settings-btn,
+    #importPlaylistInput {
+        display: none; /* Hide playlist list and action/settings buttons */
+    }
+
+    .nav-item.home-playlist {
         padding: 6px 10px;
-        font-size: 12px;
+        font-size: 14px;
+        cursor: pointer; /* Ensure Home is clickable */
     }
 
-    .sidebar li {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
-
-    .sidebar li button.remove-btn,
-    .sidebar li button.export-btn {
-        padding: 3px 6px;
-        font-size: 10px;
-    }
-
-    .main {
-        padding: 16px;
-        flex: none;
-    }
-
-    .header h1 {
-        font-size: 20px;
-        margin-bottom: 12px;
+    .search-container {
+        margin: 8px 0;
     }
 
     .search-container input {
@@ -781,9 +774,20 @@ body {
         font-size: 12px;
     }
 
+    .main {
+        padding: 16px;
+        flex: none;
+    }
+
+    .header h1 {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
     .song-item {
         padding: 8px;
         margin: 6px 0;
+        cursor: pointer; /* Allow song selection */
     }
 
     .song-item img {
@@ -800,9 +804,9 @@ body {
         font-size: 12px;
     }
 
-    .song-item .remove-btn {
-        padding: 4px 8px;
-        font-size: 10px;
+    .song-item .button-group,
+    .song-item[draggable="true"] {
+        display: none; /* Disable buttons and drag-and-drop */
     }
 
     .player {
@@ -882,35 +886,18 @@ body {
         margin-right: 6px;
     }
 
+    .volume {
+        width: auto;
+    }
+
     #volumeSlider {
         width: 60px;
     }
 
-    .modal-content {
-        padding: 16px;
-        max-width: 90%;
-    }
-
-    .modal-content h2 {
-        font-size: 18px;
-        margin-bottom: 16px;
-    }
-
-    .song-form input,
-    .song-form select {
-        padding: 8px;
-        font-size: 12px;
-        margin: 8px 0;
-    }
-
-    .song-form button {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-
-    .modal-actions {
-        margin-top: 16px;
-        gap: 8px;
+    .modal,
+    .modal-content,
+    .song-form {
+        display: none; /* Disable all modals on small screens */
     }
 }
 
