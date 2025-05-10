@@ -430,23 +430,25 @@ class MusicPlayer {
         const songStore = transaction.objectStore('songs');
         const request = songStore.getAll();
         request.onsuccess = () => {
-            const allSongs = request.result.filter(song => playlist.songIds.includes(song.id));
+            const allSongs = request.result;
+            // Order songs according to playlist.songIds
+            const orderedSongs = playlist.songIds
+                .map(songId => allSongs.find(song => song.id === songId))
+                .filter(song => song); // Remove any undefined songs
             const zip = new JSZip();
-            const playlistData = {
-                name: playlist.name,
-                songs: allSongs.map(song => ({
-                    id: song.id,
-                    title: song.title,
-                    artist: song.artist,
-                    audioFile: `audio_${song.id}.${song.audioBlob.type.split('/')[1]}`,
-                    artFile: `art_${song.id}.${song.artBlob.type.split('/')[1]}`
-                }))
-            };
-            zip.file('playlist.json', JSON.stringify(playlistData, null, 2));
-            allSongs.forEach(song => {
-                zip.file(`audio_${song.id}.${song.audioBlob.type.split('/')[1]}`, song.audioBlob);
-                zip.file(`art_${song.id}.${song.artBlob.type.split('/')[1]}`, song.artBlob);
+            // Create CSV content
+            let csvContent = `Playlist Name,${playlist.name.replace(/,/g, '')}\n`;
+            csvContent += `Title,Artist,AudioFile,ArtFile\n`;
+            orderedSongs.forEach((song, index) => {
+                const audioExtension = song.audioBlob.type.split('/')[1] || 'mp3';
+                const artExtension = song.artBlob.type.split('/')[1] || 'jpg';
+                const audioFileName = `audio_${index + 1}.${audioExtension}`;
+                const artFileName = `art_${index + 1}.${artExtension}`;
+                csvContent += `"${song.title.replace(/"/g, '""')}","${song.artist.replace(/"/g, '""')}","${audioFileName}","${artFileName}"\n`;
+                zip.file(audioFileName, song.audioBlob);
+                zip.file(artFileName, song.artBlob);
             });
+            zip.file('playlist.csv', csvContent);
             zip.generateAsync({ type: 'blob' }).then(blob => {
                 saveAs(blob, `${playlist.name}.zip`);
             }).catch(err => {
@@ -466,24 +468,62 @@ class MusicPlayer {
             return;
         }
         JSZip.loadAsync(zipFile).then(zip => {
-            const playlistFile = zip.file('playlist.json');
+            const playlistFile = zip.file('playlist.csv');
             if (!playlistFile) {
-                alert('Invalid ZIP: playlist.json not found.');
+                alert('Invalid ZIP: playlist.csv not found.');
                 return;
             }
-            playlistFile.async('string').then(playlistJson => {
-                let playlistData;
-                try {
-                    playlistData = JSON.parse(playlistJson);
-                } catch (err) {
-                    alert('Invalid ZIP: playlist.json is not valid JSON.');
+            playlistFile.async('string').then(csvContent => {
+                // Parse CSV
+                const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line);
+                if (lines.length < 2) {
+                    alert('Invalid CSV: Missing playlist name or song data.');
                     return;
                 }
-                if (!playlistData.name || !Array.isArray(playlistData.songs)) {
-                    alert('Invalid ZIP: playlist.json is missing required fields.');
+                // First row: Playlist Name
+                const nameMatch = lines[0].match(/^Playlist Name,(.*)$/);
+                if (!nameMatch) {
+                    alert('Invalid CSV: First row must be "Playlist Name,<name>".');
                     return;
                 }
-                const songPromises = playlistData.songs.map(song => {
+                const playlistName = nameMatch[1].trim();
+                // Second row: Header
+                if (lines[1] !== 'Title,Artist,AudioFile,ArtFile') {
+                    alert('Invalid CSV: Second row must be "Title,Artist,AudioFile,ArtFile".');
+                    return;
+                }
+                // Parse song rows
+                const songs = [];
+                for (let i = 2; i < lines.length; i++) {
+                    // Simple CSV parsing with proper handling of quoted fields
+                    const fields = [];
+                    let currentField = '';
+                    let inQuotes = false;
+                    for (let char of lines[i] + ',') {
+                        if (char === '"' && lines[i][arguments.callee.caller.arguments[0] - 1] !== '\\') {
+                            inQuotes = !inQuotes;
+                        } else if (char === ',' && !inQuotes) {
+                            fields.push(currentField);
+                            currentField = '';
+                        } else {
+                            currentField += char;
+                        }
+                    }
+                    if (fields.length === 4) {
+                        songs.push({
+                            title: fields[0].replace(/""/g, '"').trim(),
+                            artist: fields[1].replace(/""/g, '"').trim(),
+                            audioFile: fields[2].trim(),
+                            artFile: fields[3].trim()
+                        });
+                    }
+                }
+                if (songs.length === 0) {
+                    alert('Invalid CSV: No valid song entries found.');
+                    return;
+                }
+                // Import songs
+                const songPromises = songs.map(song => {
                     const audioFile = zip.file(song.audioFile);
                     const artFile = zip.file(song.artFile);
                     if (!audioFile || !artFile) {
@@ -503,8 +543,8 @@ class MusicPlayer {
                 });
                 Promise.all(songPromises).then(results => {
                     const newSongIds = results.map(result => result.id);
-                    this.addPlaylistToDB(playlistData.name).then(playlistId => {
-                        const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
+                    this.addPlaylistToDB(playlistName).then(playlistId => {
+                        const newPlaylist = { id: playlistId, name: playlistName, songIds: newSongIds };
                         this.playlists.push(newPlaylist);
                         this.updatePlaylistInDB(newPlaylist).then(() => {
                             this.updatePlaylistList();
@@ -522,8 +562,8 @@ class MusicPlayer {
                     alert('Failed to import songs. Check console for details.');
                 });
             }).catch(err => {
-                console.error('Error reading playlist.json:', err);
-                alert('Failed to read playlist.json. Check console for details.');
+                console.error('Error reading playlist.csv:', err);
+                alert('Failed to read playlist.csv. Check console for details.');
             });
         }).catch(err => {
             console.error('Error loading ZIP:', err);
