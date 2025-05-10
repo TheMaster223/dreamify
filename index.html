@@ -7,6 +7,8 @@
     <link rel="icon" type="image/jpeg" href="https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true">
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -23,9 +25,13 @@
             <button id="addSongBtn" class="action-btn">
                 <span class="icon">🎵</span> Add Song
             </button>
+            <button id="importPlaylistBtn" class="action-btn">
+                <span class="icon">📥</span> Import Playlist
+            </button>
+            <input type="file" id="importPlaylistInput" accept=".zip" style="display: none;">
             <h3>Playlists</h3>
             <ul id="playlistList"></ul>
-            <h3 class="settings-title">Settings | 2025.05.09</h3>
+            <h3 class="settings-title">Settings | 2025.05.10</h3>
             <button id="viewStorageBtn" class="settings-btn">
                 <span class="icon">📊</span> View Storage
             </button>

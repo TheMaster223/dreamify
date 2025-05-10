@@ -265,6 +265,23 @@ body {
     background: #9CA3AF;
 }
 
+.sidebar li button.export-btn {
+    margin: 0 4px;
+    padding: 4px 8px;
+    background: #A855F7;
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.sidebar li button.export-btn:hover {
+    background: #C084FC;
+}
+
 .main {
     flex: 1;
     padding: 24px;
@@ -446,6 +463,15 @@ body {
 
 .song-item:hover {
     background: #282828;
+}
+
+.song-item[draggable="true"] {
+    cursor: move;
+}
+
+.song-item.dragging {
+    opacity: 0.5;
+    background: #2a2a2a;
 }
 
 .song-item img {
@@ -724,7 +750,8 @@ body {
         font-size: 12px;
     }
 
-    .sidebar li button.remove-btn {
+    .sidebar li button.remove-btn,
+    .sidebar li button.export-btn {
         padding: 3px 6px;
         font-size: 10px;
     }
@@ -779,20 +806,20 @@ body {
     }
 
     .player {
-        height: 80px; /* Slightly taller to accommodate volume bar */
+        height: 80px;
         padding: 0 16px;
     }
 
     .player-content {
-        flex-wrap: nowrap; /* Prevent wrapping to keep layout in one row */
+        flex-wrap: nowrap;
         align-items: center;
         justify-content: space-between;
-        gap: 8px; /* Add small gap between sections */
+        gap: 8px;
     }
 
     .current-song {
         width: auto;
-        flex: 0 1 auto; /* Allow shrinking but not growing */
+        flex: 0 1 auto;
         margin-bottom: 0;
         align-items: center;
         overflow: hidden;
@@ -821,7 +848,7 @@ body {
         flex: 1;
         width: auto;
         display: flex;
-        flex-direction: column; /* Stack controls and progress vertically */
+        flex-direction: column;
         align-items: center;
         gap: 4px;
     }
@@ -836,7 +863,7 @@ body {
     }
 
     .progress {
-        max-width: 100px; /* Smaller progress bar to fit */
+        max-width: 100px;
     }
 
     .time {
@@ -845,8 +872,8 @@ body {
     }
 
     .volume {
-        display: flex; /* Make volume bar visible */
-        flex: 0 0 auto; /* Prevent growing, only take needed space */
+        display: flex;
+        flex: 0 0 auto;
         width: auto;
     }
 
@@ -856,7 +883,7 @@ body {
     }
 
     #volumeSlider {
-        width: 60px; /* Smaller volume slider for mobile */
+        width: 60px;
     }
 
     .modal-content {
@@ -887,21 +914,12 @@ body {
     }
 }
 
-a:link {
-  color: #A855F7;
-}
-
-/* visited link */
+a:link,
 a:visited {
-  color: #A855F7;
+    color: #A855F7;
 }
 
-/* mouse over link */
-a:hover {
-  color: #C084FC;
-}
-
-/* selected link */
+a:hover,
 a:active {
-  color: #C084FC;
+    color: #C084FC;
 }

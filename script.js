@@ -44,49 +44,49 @@ const defaultSongs = [
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default5.mp3',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default5.jpg'
     ),
-	new Song(
+    new Song(
         'default6',
         'VULTURES 3 LEAK',
         'Joe Miggle, ¥$',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default6.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default6.jpg'
     ),
-	new Song(
+    new Song(
         'default7',
         'YOU DID KING',
         'Joe Miggle, LoveAndLightTV',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default7.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default7.jpg'
     ),
-	new Song(
+    new Song(
         'default8',
         'The Gooner Thoughts Won',
         'Joe Miggle, Kyrie Irving',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default8.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default8.jpg'
     ),
-	new Song(
+    new Song(
         'default9',
         'Dreamy and the Gooner Land Pirates',
         'Joe Miggle, Dreamybull',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default9.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default9.jpg'
     ),
-	new Song(
+    new Song(
         'default10',
         'LeBron Raymone James',
         'Joe Miggle, LeBron James, Swamp Izzo',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default10.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default10.jpg'
     ),
-	new Song(
+    new Song(
         'default11',
         'Siege Femboys',
         'Toodles, Nicholas Stewart',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default11.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default11.jpg'
     ),
-	new Song(
+    new Song(
         'default12',
         'Taste the Rainbow',
         'Lil Skittle, Sam Fisher, Joe Miggle',
@@ -94,8 +94,6 @@ const defaultSongs = [
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.jpg'
     )
 ];
-
-
 
 const homePlaylist = {
     id: 'home',
@@ -128,7 +126,7 @@ class MusicPlayer {
         this.playlistList = document.getElementById('playlistList');
         this.currentPlaylistName = document.getElementById('currentPlaylistName');
         this.volumeSlider = document.getElementById('volumeSlider');
-        this.volumeSlider.value = 50; // Set default volume to 50
+        this.volumeSlider.value = 50;
         this.volumeSlider.style.setProperty('--value', this.volumeSlider.value);
         this.songSearchContainer = document.getElementById('songSearchContainer');
         this.songSearch = document.getElementById('songSearch');
@@ -337,6 +335,7 @@ class MusicPlayer {
             const allSongs = request.result;
             this.songs = allSongs
                 .filter(song => playlist.songIds.includes(song.id))
+                .sort((a, b) => playlist.songIds.indexOf(a.id) - playlist.songIds.indexOf(b.id))
                 .map(song => new Song(song.id, song.title, song.artist, song.audioBlob, song.artBlob));
             this.allSongs = [...this.songs];
             this.renderSongList();
@@ -382,6 +381,117 @@ class MusicPlayer {
         });
     }
 
+    exportPlaylist(playlistId) {
+        if (playlistId === 'home') {
+            alert('Cannot export the Home playlist.');
+            return;
+        }
+        const playlist = this.playlists.find(p => p.id === playlistId);
+        if (!playlist) {
+            alert('Playlist not found.');
+            return;
+        }
+        const transaction = this.db.transaction(['songs'], 'readonly');
+        const songStore = transaction.objectStore('songs');
+        const request = songStore.getAll();
+        request.onsuccess = () => {
+            const allSongs = request.result.filter(song => playlist.songIds.includes(song.id));
+            const zip = new JSZip();
+            const playlistData = {
+                name: playlist.name,
+                songs: allSongs.map(song => ({
+                    id: song.id,
+                    title: song.title,
+                    artist: song.artist,
+                    audioFile: `audio_${song.id}.${song.audioBlob.type.split('/')[1]}`,
+                    artFile: `art_${song.id}.${song.artBlob.type.split('/')[1]}`
+                }))
+            };
+            zip.file('playlist.json', JSON.stringify(playlistData, null, 2));
+            allSongs.forEach(song => {
+                zip.file(`audio_${song.id}.${song.audioBlob.type.split('/')[1]}`, song.audioBlob);
+                zip.file(`art_${song.id}.${song.artBlob.type.split('/')[1]}`, song.artBlob);
+            });
+            zip.generateAsync({ type: 'blob' }).then(blob => {
+                saveAs(blob, `${playlist.name}.zip`);
+            }).catch(err => {
+                console.error('Error generating ZIP:', err);
+                alert('Failed to export playlist. Check console for details.');
+            });
+        };
+        request.onerror = () => {
+            console.error('Error fetching songs for export:', request.error);
+            alert('Failed to export playlist. Check console for details.');
+        };
+    }
+
+    importPlaylist(zipFile) {
+        JSZip.loadAsync(zipFile).then(zip => {
+            const playlistFile = zip.file('playlist.json');
+            if (!playlistFile) {
+                alert('Invalid ZIP: playlist.json not found.');
+                return;
+            }
+            playlistFile.async('string').then(playlistJson => {
+                let playlistData;
+                try {
+                    playlistData = JSON.parse(playlistJson);
+                } catch (err) {
+                    alert('Invalid ZIP: playlist.json is not valid JSON.');
+                    return;
+                }
+                if (!playlistData.name || !Array.isArray(playlistData.songs)) {
+                    alert('Invalid ZIP: playlist.json is missing required fields.');
+                    return;
+                }
+                const newSongIds = [];
+                const addSongPromises = playlistData.songs.map(song => {
+                    const audioFile = zip.file(song.audioFile);
+                    const artFile = zip.file(song.artFile);
+                    if (!audioFile || !artFile) {
+                        alert(`Missing audio or art file for song: ${song.title}`);
+                        return Promise.reject(new Error('Missing files'));
+                    }
+                    return Promise.all([
+                        audioFile.async('blob'),
+                        artFile.async('blob')
+                    ]).then(([audioBlob, artBlob]) => {
+                        const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
+                        return this.addSongToDB(newSong).then(songId => {
+                            newSong.id = songId;
+                            newSongIds.push(songId);
+                        });
+                    });
+                });
+                Promise.all(addSongPromises).then(() => {
+                    this.addPlaylistToDB(playlistData.name).then(playlistId => {
+                        const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
+                        this.playlists.push(newPlaylist);
+                        this.updatePlaylistInDB(newPlaylist).then(() => {
+                            this.updatePlaylistList();
+                            this.loadSongsForPlaylist(playlistId);
+                        }).catch(err => {
+                            console.error('Error updating imported playlist:', err);
+                            alert('Failed to save imported playlist. Check console for details.');
+                        });
+                    }).catch(err => {
+                        console.error('Error creating imported playlist:', err);
+                        alert('Failed to create imported playlist. Check console for details.');
+                    });
+                }).catch(err => {
+                    console.error('Error importing songs:', err);
+                    alert('Failed to import songs. Check console for details.');
+                });
+            }).catch(err => {
+                console.error('Error reading playlist.json:', err);
+                alert('Failed to read playlist.json. Check console for details.');
+            });
+        }).catch(err => {
+            console.error('Error loading ZIP:', err);
+            alert('Invalid ZIP file. Check console for details.');
+        });
+    }
+
     setupEventListeners() {
         if (this.playPauseBtn) {
             this.playPauseBtn.addEventListener('click', () => this.togglePlayPause());
@@ -418,6 +528,18 @@ class MusicPlayer {
                 this.songSearch.value = '';
                 this.clearSongSearch.classList.remove('visible');
                 this.filterSongs();
+            });
+        }
+        const importPlaylistBtn = document.getElementById('importPlaylistBtn');
+        const importPlaylistInput = document.getElementById('importPlaylistInput');
+        if (importPlaylistBtn && importPlaylistInput) {
+            importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
+            importPlaylistInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.importPlaylist(file);
+                    importPlaylistInput.value = '';
+                }
             });
         }
     }
@@ -457,7 +579,15 @@ class MusicPlayer {
                 e.stopPropagation();
                 this.removePlaylist(playlist.id);
             });
+            const exportBtn = document.createElement('button');
+            exportBtn.textContent = 'Export';
+            exportBtn.className = 'export-btn';
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.exportPlaylist(playlist.id);
+            });
             li.appendChild(span);
+            li.appendChild(exportBtn);
             li.appendChild(removeBtn);
             this.playlistList.appendChild(li);
         });
@@ -571,11 +701,37 @@ class MusicPlayer {
         });
     }
 
+    reorderSongs(fromIndex, toIndex) {
+        if (this.currentPlaylistId === 'home') return;
+        const playlist = this.playlists.find(p => p.id === this.currentPlaylistId);
+        if (!playlist) return;
+        const [movedSong] = this.songs.splice(fromIndex, 1);
+        this.songs.splice(toIndex, 0, movedSong);
+        const allSongsFromIndex = this.allSongs.findIndex(s => s.id === movedSong.id);
+        const [movedAllSong] = this.allSongs.splice(allSongsFromIndex, 1);
+        const allSongsToIndex = this.songs.findIndex(s => s.id === this.allSongs[toIndex]?.id);
+        this.allSongs.splice(allSongsToIndex, 0, movedAllSong);
+        const [movedSongId] = playlist.songIds.splice(fromIndex, 1);
+        playlist.songIds.splice(toIndex, 0, movedSongId);
+        if (this.currentIndex === fromIndex) {
+            this.currentIndex = toIndex;
+        } else if (fromIndex < this.currentIndex && toIndex >= this.currentIndex) {
+            this.currentIndex--;
+        } else if (fromIndex > this.currentIndex && toIndex <= this.currentIndex) {
+            this.currentIndex++;
+        }
+        this.updatePlaylistInDB(playlist).catch(err => {
+            console.error('Error updating playlist order in DB:', err);
+            alert('Failed to save new song order. Check console for details.');
+        });
+    }
+
     renderSongList() {
         this.songList.innerHTML = '';
         this.songs.forEach((song, index) => {
             const songElement = document.createElement('div');
             songElement.className = 'song-item';
+            songElement.setAttribute('draggable', this.currentPlaylistId !== 'home');
             const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
             songElement.innerHTML = `
                 <img src="${artUrl}" alt="Album Art">
@@ -599,6 +755,27 @@ class MusicPlayer {
                     this.play();
                 }
             });
+            if (this.currentPlaylistId !== 'home') {
+                songElement.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', index);
+                    songElement.classList.add('dragging');
+                });
+                songElement.addEventListener('dragend', () => {
+                    songElement.classList.remove('dragging');
+                });
+                songElement.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                songElement.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = index;
+                    if (fromIndex !== toIndex) {
+                        this.reorderSongs(fromIndex, toIndex);
+                        this.renderSongList();
+                    }
+                });
+            }
             this.songList.appendChild(songElement);
         });
     }
@@ -641,36 +818,24 @@ class MusicPlayer {
     }
 
     playPrevious() {
-        if (this.currentIndex > 0) {
-            this.currentIndex--;
-            this.loadSong();
-            this.play();
+        if (this.songs.length === 0) return;
+        this.currentIndex--;
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.songs.length - 1;
         }
+        this.loadSong();
+        this.play();
     }
 
     playNext() {
         if (this.songs.length === 0) return;
-
         this.currentIndex++;
         if (this.currentIndex >= this.songs.length) {
-            this.currentIndex = 0; // Loop back to start
+            this.currentIndex = 0;
         }
         this.loadSong();
         this.play();
     }
-
-    playPrevious() {
-        if (this.songs.length === 0) return;
-
-        this.currentIndex--;
-        if (this.currentIndex < 0) {
-            this.currentIndex = this.songs.length - 1; // Loop to last song
-        }
-        this.loadSong();
-        this.play();
-    }
-
-
 
     play() {
         if (this.audio.src) {
