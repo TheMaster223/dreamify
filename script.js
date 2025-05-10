@@ -92,14 +92,6 @@ const defaultSongs = [
         'Lil Skittle, Sam Fisher, Joe Miggle',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.jpg'
-    ),
-// FILLER ALWAYS LAST - 2025.05.09
-    new Song(
-        'filler',
-        'Coming Soon...',
-        '',
-        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.mp3',
-        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.jpg'
     )
 ];
 
