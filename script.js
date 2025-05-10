@@ -98,7 +98,7 @@ const defaultSongs = [
         'filler',
         'Coming Soon...',
         '',
-        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.mp3',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/nothing.mp3',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.jpg'
     )
 ];
