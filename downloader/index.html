@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreamify Spotify Downloader</title>
+    <link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default1.jpg">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .pane {
+            flex: 1;
+            border: none;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="pane">
+            <iframe src="https://spotdownloader.com" title="Album/Song Downloader"></iframe>
+        </div>
+        <div class="pane">
+            <iframe src="https://www.spotifycover.art" title="Album Art Downloader"></iframe>
+        </div>
+    </div>
+</body>
+</html>
