@@ -92,8 +92,18 @@ const defaultSongs = [
         'Lil Skittle, Sam Fisher, Joe Miggle',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.wav',
         'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/default12.jpg'
+    ),
+// FILLER ALWAYS LAST - 2025.05.09
+    new Song(
+        'filler',
+        'Coming Soon...',
+        '',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.mp3',
+        'https://raw.githubusercontent.com/TheMaster223/tobe/master/assets/filler-song.jpg'
     )
 ];
+
+
 
 const homePlaylist = {
     id: 'home',
@@ -656,6 +666,18 @@ class MusicPlayer {
         this.loadSong();
         this.play();
     }
+
+    playPrevious() {
+        if (this.songs.length === 0) return;
+
+        this.currentIndex--;
+        if (this.currentIndex < 0) {
+            this.currentIndex = this.songs.length - 1; // Loop to last song
+        }
+        this.loadSong();
+        this.play();
+    }
+
 
 
     play() {
