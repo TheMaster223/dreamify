@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreamify Docs</title>
+    <link rel="icon" type="image/jpeg" href="https://github.com/TheMaster223/tobe/blob/master/assets/default1.jpg?raw=true">
+    <link rel="stylesheet" href="../styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">
+                <h2>Dreamify</h2>
+            </div>
+            <a href="/" style="text-decoration:none">
+                <button class="action-btn">
+                    <span class="icon">🏠</span> Home
+                </button>
+            </a>
+            <h3>Resources</h3>
+            <a href="/downloader" style="text-decoration:none" target="_blank">
+                <button class="action-btn">
+                    <span class="icon">⬇️</span> Spotify Downloader
+                </button>
+            </a>
+            <button class="action-btn active">
+                <span class="icon">📖</span> Docs
+            </button>
+        </div>
+        <div class="main">
+            <div class="header">
+                <h1>Dreamify Docs</h1>
+            </div>
+            <div class="content">
+                <section>
+                    <h2>ZIP Structure</h2>
+                    <p>A playlist is imported as a ZIP file containing a CSV file and media files. The ZIP <strong>must</strong> include:</p>
+                    <ul>
+                        <li><strong><code>playlist.csv</code></strong>: Defines the playlist name and song details.</li>
+                        <li><strong>Audio Files</strong>: One audio file per song (e.g., <code>song.mp3</code>).</li>
+                        <li><strong>Art Files</strong>: One image file per song for album art (e.g., <code>cover.jpg</code>).</li>
+                    </ul>
+                    <p>All files <strong>must</strong> be at the ZIP’s root (no subfolders). Example:</p>
+                    <pre>
+my_playlist.zip
+├── playlist.csv
+├── song.mp3
+├── cover.jpg
+├── track.mp3
+├── artwork.png
+                    </pre>
+                    <p><strong>Tips</strong>:</p>
+                    <ul>
+                        <li>✅ Place all files directly in the ZIP’s root.</li>
+                        <li>⚠️ Avoid extra files or folders to prevent import errors.</li>
+                        <li>✅ Use tools like 7-Zip or your system’s ZIP feature.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>CSV Format</h2>
+                    <p>The <code>playlist.csv</code> file specifies the playlist and its songs. It <strong>must</strong> have:</p>
+                    <ul>
+                        <li><strong>First Row</strong>: <code>Playlist Name,<name></code> (e.g., <code>Playlist Name,My Favorites</code>).</li>
+                        <li><strong>Second Row</strong>: <code>Title,Artist,AudioFile,ArtFile</code> (exact header).</li>
+                        <li><strong>Song Rows</strong>: One row per song with four columns, all in double quotes (<code>"</code>) and separated by commas.</li>
+                    </ul>
+                    <table class="doc-table">
+                        <tr>
+                            <th>Column</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                        </tr>
+                        <tr>
+                            <td>Title</td>
+                            <td>Song title.</td>
+                            <td><code>"Song, One"</code></td>
+                        </tr>
+                        <tr>
+                            <td>Artist</td>
+                            <td>Artist name (can be empty).</td>
+                            <td><code>"Artist A"</code> or <code>""</code></td>
+                        </tr>
+                        <tr>
+                            <td>AudioFile</td>
+                            <td>Audio filename in the ZIP.</td>
+                            <td><code>"song.mp3"</code></td>
+                        </tr>
+                        <tr>
+                            <td>ArtFile</td>
+                            <td>Art filename in the ZIP.</td>
+                            <td><code>"cover.jpg"</code></td>
+                        </tr>
+                    </table>
+                    <p>Songs appear in the playlist in CSV order. Example:</p>
+                    <pre>
+Playlist Name,My Favorites
+Title,Artist,AudioFile,ArtFile
+"Song, One","Artist A","song.mp3","cover.jpg"
+"Track Two","","track.mp3","artwork.png"
+                    </pre>
+                    <p><strong>Requirements</strong>:</p>
+                    <ul>
+                        <li>All song row fields <strong>must</strong> be in double quotes.</li>
+                        <li>Fields <strong>must</strong> be separated by commas.</li>
+                        <li>Title, AudioFile, and ArtFile <strong>must</strong> have values; Artist can be empty (<code>""</code>).</li>
+                        <li>The header <strong>must</strong> be <code>Title,Artist,AudioFile,ArtFile</code>.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>File Naming</h2>
+                    <p>Audio and art files can have any valid filename, as long as they match the <code>AudioFile</code> and <code>ArtFile</code> columns in the CSV exactly.</p>
+                    <table class="doc-table">
+                        <tr>
+                            <th>Type</th>
+                            <th>Formats</th>
+                            <th>Notes</th>
+                        </tr>
+                        <tr>
+                            <td>Audio</td>
+                            <td>MP3, WAV, OGG, AAC</td>
+                            <td>MP3 is recommended.</td>
+                        </tr>
+                        <tr>
+                            <td>Art</td>
+                            <td>JPG, PNG, GIF</td>
+                            <td>JPG or PNG is recommended.</td>
+                        </tr>
+                    </table>
+                    <p><strong>Requirements</strong>:</p>
+                    <ul>
+                        <li>Filenames in the CSV <strong>must</strong> match the ZIP files, including extensions.</li>
+                        <li>Each audio and art file <strong>must</strong> have a unique name in the ZIP.</li>
+                        <li>Avoid special characters; spaces are okay but not recommended.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Creating a Playlist</h2>
+                    <p>Follow these steps to create a playlist ZIP for Dreamify:</p>
+                    <ol>
+                        <li><strong>Make the CSV</strong>:
+                            <ul>
+                                <li>Use a text editor or spreadsheet software.</li>
+                                <li>Follow the <a href="#csv-format">CSV Format</a> requirements.</li>
+                                <li>Save as <code>playlist.csv</code>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Get Media Files</strong>:
+                            <ul>
+                                <li>Obtain audio and art files (use the <a href="/downloader" target="_blank">Spotify Downloader</a> for audio if needed).</li>
+                            </ul>
+                        </li>
+                        <li><strong>Name Files</strong>:
+                            <ul>
+                                <li>Ensure filenames match the CSV’s <code>AudioFile</code> and <code>ArtFile</code> columns.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Create the ZIP</strong>:
+                            <ul>
+                                <li>Add <code>playlist.csv</code> and all audio/art files to a ZIP at the root.</li>
+                                <li>Name the ZIP (e.g., <code>my_playlist.zip</code>).</li>
+                            </ul>
+                        </li>
+                        <li><strong>Import</strong>:
+                            <ul>
+                                <li>In Dreamify, click <strong>Import Playlist</strong>, select the ZIP, and wait for the playlist to appear.</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h2>Extra Information</h2>
+                    <p><strong>Testing Playlists</strong>:</p>
+                    <ul>
+                        <li>Export a playlist from Dreamify to see the correct ZIP and CSV format.</li>
+                        <li>Test with a small ZIP (1–2 songs) before creating large playlists.</li>
+                    </ul>
+                    <p><strong>File Sizes</strong>:</p>
+                    <ul>
+                        <li>Use compressed audio (e.g., MP3) and smaller images (e.g., JPG/PNG) to speed up imports.</li>
+                        <li>Large files may slow imports or hit browser storage limits.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2>Examples</h2>
+                    <h3>Simple Example</h3>
+                    <p>A playlist with two songs:</p>
+                    <pre>
+simple_playlist.zip
+├── playlist.csv
+├── song.mp3
+├── cover.jpg
+├── track.mp3
+├── artwork.png
+                    </pre>
+                    <p><strong>CSV:</strong></p>
+                    <pre>
+Playlist Name,Simple Playlist
+Title,Artist,AudioFile,ArtFile
+"Song, One","Artist A","song.mp3","cover.jpg"
+"Track Two","","track.mp3","artwork.png"
+                    </pre>
+                    <h3>Complex Example</h3>
+                    <p>A playlist with three songs, including commas:</p>
+                    <pre>
+complex_playlist.zip
+├── playlist.csv
+├── first.mp3
+├── album.png
+├── second.wav
+├── image.jpg
+├── third.mp3
+├── art.jpg
+                    </pre>
+                    <p><strong>CSV:</strong></p>
+                    <pre>
+Playlist Name,My, Favorites
+Title,Artist,AudioFile,ArtFile
+"Song, One","Band A","first.mp3","album.png"
+"Love, Reign","Band, B","second.wav","image.jpg"
+"Final Track","Artist C","third.mp3","art.jpg"
+                    </pre>
+                </section>
+
+                <section>
+                    <h2>Frequently Asked Questions</h2>
+                    <ul>
+                        <li><strong>Can I use subfolders in the ZIP?</strong> No, all files must be at the ZIP’s root.</li>
+                        <li><strong>How do I handle commas in titles or artists?</strong> Enclose the field in quotes (e.g., <code>"Song, One"</code>).</li>
+                        <li><strong>Can I skip album art?</strong> No, every song needs an art file in the CSV and ZIP.</li>
+                        <li><strong>Can I use FLAC audio?</strong> No, use MP3, WAV, OGG, or AAC.</li>
+                        <li><strong>How do I get audio files?</strong> Try the <a href="/downloader" target="_blank">Spotify Downloader</a> or other legal sources.</li>
+                        <li><strong>Why did my import fail?</strong> Check for:
+                            <ul>
+                                <li>Missing <code>playlist.csv</code> or incorrect CSV format.</li>
+                                <li>Missing audio/art files or mismatched filenames.</li>
+                                <li>Subfolders in the ZIP.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
