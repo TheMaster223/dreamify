@@ -11,6 +11,16 @@ body {
     overflow: hidden;
 }
 
+a:link,
+a:visited {
+    color: #A855F7;
+}
+
+a:hover,
+a:active {
+    color: #C084FC;
+}
+
 .container {
     display: flex;
     height: calc(100vh - 90px);
@@ -785,10 +795,18 @@ body {
         font-size: 12px;
     }
 
-    .sidebar li .button-group,
-    .sidebar li button.remove-btn,
+    .sidebar li .button-group {
+        opacity: 1; /* Always show remove button on mobile */
+    }
+
+    .sidebar li button.remove-btn {
+        display: block; /* Show remove button on mobile */
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+
     .sidebar li button.export-btn {
-        display: none; /* Hide playlist remove/export buttons */
+        display: none; /* Hide export button on mobile */
     }
 
     #importPlaylistBtn,
@@ -890,44 +908,28 @@ body {
     }
 
     .controls button {
-        font-size: 18px;
+        font-size: 20px;
     }
 
     .progress {
-        max-width: 100px;
+        max-width: 100%;
     }
 
     .time {
-        font-size: 8px;
-        margin-bottom: 2px;
+        font-size: 10px;
     }
 
     .volume {
-        display: flex;
-        flex: 0 0 auto;
         width: auto;
+        flex: 0 1 auto;
     }
 
     .volume-icon {
-        font-size: 14px;
-        margin-right: 6px;
-    }
-
-    .volume {
-        width: auto;
+        font-size: 16px;
+        margin-right: 8px;
     }
 
     #volumeSlider {
-        width: 60px;
+        width: 80px;
     }
-}
-
-a:link,
-a:visited {
-    color: #A855F7;
-}
-
-a:hover,
-a:active {
-    color: #C084FC;
 }

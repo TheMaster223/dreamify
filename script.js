@@ -234,7 +234,6 @@ class MusicPlayer {
     }
 
     removePlaylistFromDB(id) {
-        if (this.isSmallScreen) return Promise.reject(new Error('Playlist removal disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction1 = this.db.transaction(['playlists'], 'readonly');
             const playlistStore1 = transaction1.objectStore('playlists');
@@ -456,71 +455,64 @@ class MusicPlayer {
         };
     }
 
-    importPlaylist(zipFile) {
-        JSZip.loadAsync(zipFile).then(zip => {
+    async importPlaylist(zipFile) {
+        try {
+            if (zipFile.size > 100 * 1024 * 1024) { // 100MB limit
+                throw new Error('ZIP file is too large (max 100MB).');
+            }
+            const zip = await JSZip.loadAsync(zipFile);
             const playlistFile = zip.file('playlist.json');
             if (!playlistFile) {
-                alert('Invalid ZIP: playlist.json not found.');
-                return;
+                throw new Error('Invalid ZIP: playlist.json not found.');
             }
-            playlistFile.async('string').then(playlistJson => {
-                let playlistData;
+            const playlistJson = await playlistFile.async('string');
+            let playlistData;
+            try {
+                playlistData = JSON.parse(playlistJson);
+            } catch (err) {
+                throw new Error('Invalid ZIP: playlist.json is not valid JSON.');
+            }
+            if (!playlistData.name || !Array.isArray(playlistData.songs)) {
+                throw new Error('Invalid ZIP: playlist.json is missing required fields.');
+            }
+            const newSongIds = [];
+            // Process songs sequentially to avoid IndexedDB overload on iOS
+            for (const song of playlistData.songs) {
+                console.log(`Importing song: ${song.title}`);
+                const audioFile = zip.file(song.audioFile);
+                const artFile = zip.file(song.artFile);
+                if (!audioFile || !artFile) {
+                    console.error(`Missing audio or art file for song: ${song.title}`);
+                    throw new Error(`Missing audio or art file for song: ${song.title}`);
+                }
                 try {
-                    playlistData = JSON.parse(playlistJson);
-                } catch (err) {
-                    alert('Invalid ZIP: playlist.json is not valid JSON.');
-                    return;
-                }
-                if (!playlistData.name || !Array.isArray(playlistData.songs)) {
-                    alert('Invalid ZIP: playlist.json is missing required fields.');
-                    return;
-                }
-                const newSongIds = [];
-                const addSongPromises = playlistData.songs.map(song => {
-                    const audioFile = zip.file(song.audioFile);
-                    const artFile = zip.file(song.artFile);
-                    if (!audioFile || !artFile) {
-                        alert(`Missing audio or art file for song: ${song.title}`);
-                        return Promise.reject(new Error('Missing files'));
-                    }
-                    return Promise.all([
+                    const [audioBlob, artBlob] = await Promise.all([
                         audioFile.async('blob'),
                         artFile.async('blob')
-                    ]).then(([audioBlob, artBlob]) => {
-                        const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
-                        return this.addSongToDB(newSong).then(songId => {
-                            newSong.id = songId;
-                            newSongIds.push(songId);
-                        });
-                    });
-                });
-                Promise.all(addSongPromises).then(() => {
-                    this.addPlaylistToDB(playlistData.name).then(playlistId => {
-                        const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
-                        this.playlists.push(newPlaylist);
-                        this.updatePlaylistInDB(newPlaylist).then(() => {
-                            this.updatePlaylistList();
-                            this.loadSongsForPlaylist(playlistId);
-                        }).catch(err => {
-                            console.error('Error updating imported playlist:', err);
-                            alert('Failed to save imported playlist. Check console for details.');
-                        });
-                    }).catch(err => {
-                        console.error('Error creating imported playlist:', err);
-                        alert('Failed to create imported playlist. Check console for details.');
-                    });
-                }).catch(err => {
-                    console.error('Error importing songs:', err);
-                    alert('Failed to import songs. Check console for details.');
-                });
-            }).catch(err => {
-                console.error('Error reading playlist.json:', err);
-                alert('Failed to read playlist.json. Check console for details.');
-            });
-        }).catch(err => {
-            console.error('Error loading ZIP:', err);
-            alert('Invalid ZIP file. Check console for details.');
-        });
+                    ]);
+                    if (!audioBlob.type.startsWith('audio/') || !artBlob.type.startsWith('image/')) {
+                        console.error(`Invalid file types for song: ${song.title}`);
+                        throw new Error(`Invalid file types for song: ${song.title}`);
+                    }
+                    const newSong = new Song(null, song.title, song.artist, audioBlob, artBlob);
+                    const songId = await this.addSongToDB(newSong);
+                    newSong.id = songId;
+                    newSongIds.push(songId);
+                } catch (err) {
+                    console.error(`Failed to import song ${song.title}:`, err);
+                    throw new Error(`Failed to import song ${song.title}: ${err.message}`);
+                }
+            }
+            const playlistId = await this.addPlaylistToDB(playlistData.name);
+            const newPlaylist = { id: playlistId, name: playlistData.name, songIds: newSongIds };
+            this.playlists.push(newPlaylist);
+            await this.updatePlaylistInDB(newPlaylist);
+            this.updatePlaylistList();
+            this.loadSongsForPlaylist(playlistId);
+        } catch (err) {
+            console.error('Error importing playlist:', err);
+            alert(`Failed to import playlist: ${err.message}. Check console for details.`);
+        }
     }
 
     renamePlaylist(playlistId, newName) {
@@ -716,16 +708,16 @@ class MusicPlayer {
                     e.stopPropagation();
                     this.exportPlaylist(playlist.id);
                 });
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'Remove';
-                removeBtn.className = 'remove-btn';
-                removeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.removePlaylist(playlist.id);
-                });
                 buttonGroup.appendChild(exportBtn);
-                buttonGroup.appendChild(removeBtn);
             }
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'Remove';
+            removeBtn.className = 'remove-btn';
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.removePlaylist(playlist.id);
+            });
+            buttonGroup.appendChild(removeBtn);
             if (!this.isSmallScreen) {
                 li.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', li.dataset.index);
@@ -852,10 +844,6 @@ class MusicPlayer {
     }
 
     removePlaylist(id) {
-        if (this.isSmallScreen) {
-            alert('Playlist removal disabled on small screens.');
-            return;
-        }
         if (id === 'home') {
             alert('Cannot remove the Home playlist.');
             return;
