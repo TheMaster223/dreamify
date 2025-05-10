@@ -742,17 +742,19 @@ body {
     }
 
     .sidebar h3,
-    .sidebar ul,
-    .action-btn,
-    .settings-btn,
-    #importPlaylistInput {
-        display: none; /* Hide playlist list and action/settings buttons */
+    .action-btn:not(#importPlaylistBtn),
+    .settings-btn:not(#importPlaylistBtn),
+    #songModal,
+    #editSongModal,
+    #playlistModal,
+    #renamePlaylistModal {
+        display: none; /* Hide non-import actions and modals */
     }
 
     .nav-item.home-playlist {
         padding: 6px 10px;
         font-size: 14px;
-        cursor: pointer; /* Ensure Home is clickable */
+        cursor: pointer;
     }
 
     .search-container {
@@ -774,6 +776,26 @@ body {
         font-size: 12px;
     }
 
+    .sidebar ul {
+        margin: 8px 0;
+    }
+
+    .sidebar li {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .sidebar li .button-group,
+    .sidebar li button.remove-btn,
+    .sidebar li button.export-btn {
+        display: none; /* Hide playlist remove/export buttons */
+    }
+
+    #importPlaylistBtn,
+    #importPlaylistInput {
+        display: flex; /* Keep import button/input visible */
+    }
+
     .main {
         padding: 16px;
         flex: none;
@@ -787,7 +809,7 @@ body {
     .song-item {
         padding: 8px;
         margin: 6px 0;
-        cursor: pointer; /* Allow song selection */
+        cursor: pointer;
     }
 
     .song-item img {
@@ -805,8 +827,13 @@ body {
     }
 
     .song-item .button-group,
+    .song-item button.remove-btn,
+    .song-item button.edit-btn {
+        display: none; /* Hide song remove/edit buttons */
+    }
+
     .song-item[draggable="true"] {
-        display: none; /* Disable buttons and drag-and-drop */
+        cursor: move; /* Enable drag-and-drop */
     }
 
     .player {
@@ -892,12 +919,6 @@ body {
 
     #volumeSlider {
         width: 60px;
-    }
-
-    .modal,
-    .modal-content,
-    .song-form {
-        display: none; /* Disable all modals on small screens */
     }
 }
 

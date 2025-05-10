@@ -213,7 +213,6 @@ class MusicPlayer {
     }
 
     updatePlaylistInDB(playlist) {
-        if (this.isSmallScreen) return Promise.reject(new Error('Playlist updates disabled on small screens'));
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['playlists'], 'readwrite');
             const store = transaction.objectStore('playlists');
@@ -315,9 +314,6 @@ class MusicPlayer {
     }
 
     loadSongsForPlaylist(playlistId) {
-        if (this.isSmallScreen && playlistId !== 'home') {
-            playlistId = 'home'; // Force Home playlist on small screens
-        }
         this.currentPlaylistId = playlistId;
         this.updatePlaylistList();
         if (this.songSearchContainer) {
@@ -461,10 +457,6 @@ class MusicPlayer {
     }
 
     importPlaylist(zipFile) {
-        if (this.isSmallScreen) {
-            alert('Playlist import disabled on small screens.');
-            return;
-        }
         JSZip.loadAsync(zipFile).then(zip => {
             const playlistFile = zip.file('playlist.json');
             if (!playlistFile) {
@@ -558,7 +550,10 @@ class MusicPlayer {
     }
 
     reorderPlaylists(fromIndex, toIndex) {
-        if (this.isSmallScreen) return;
+        if (this.isSmallScreen) {
+            alert('Playlist reordering disabled on small screens.');
+            return;
+        }
         const adjustedFromIndex = fromIndex + 1;
         const adjustedToIndex = toIndex + 1;
         const [movedPlaylist] = this.playlists.splice(adjustedFromIndex, 1);
@@ -655,19 +650,17 @@ class MusicPlayer {
                 this.filterSongs();
             });
         }
-        if (!this.isSmallScreen) {
-            const importPlaylistBtn = document.getElementById('importPlaylistBtn');
-            const importPlaylistInput = document.getElementById('importPlaylistInput');
-            if (importPlaylistBtn && importPlaylistInput) {
-                importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
-                importPlaylistInput.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        this.importPlaylist(file);
-                        importPlaylistInput.value = '';
-                    }
-                });
-            }
+        const importPlaylistBtn = document.getElementById('importPlaylistBtn');
+        const importPlaylistInput = document.getElementById('importPlaylistInput');
+        if (importPlaylistBtn && importPlaylistInput) {
+            importPlaylistBtn.addEventListener('click', () => importPlaylistInput.click());
+            importPlaylistInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.importPlaylist(file);
+                    importPlaylistInput.value = '';
+                }
+            });
         }
     }
 
@@ -692,17 +685,18 @@ class MusicPlayer {
 
     updatePlaylistList() {
         this.playlistList.innerHTML = '';
-        if (this.isSmallScreen) return; // Skip rendering playlists on small screens
         this.playlists.forEach((playlist, index) => {
             if (playlist.id === 'home') return;
             const li = document.createElement('li');
             li.className = this.currentPlaylistId === playlist.id ? 'active' : '';
-            li.setAttribute('draggable', true);
-            li.dataset.index = index - 1;
+            if (!this.isSmallScreen) {
+                li.setAttribute('draggable', true);
+                li.dataset.index = index - 1;
+            }
             const span = document.createElement('span');
             span.textContent = playlist.name;
             span.addEventListener('click', () => this.loadSongsForPlaylist(playlist.id));
-            if (playlist.id !== 'home') {
+            if (!this.isSmallScreen) {
                 span.addEventListener('dblclick', () => {
                     const modal = document.getElementById('renamePlaylistModal');
                     const input = document.getElementById('renamePlaylistName');
@@ -714,41 +708,45 @@ class MusicPlayer {
             }
             const buttonGroup = document.createElement('div');
             buttonGroup.className = 'button-group';
-            const exportBtn = document.createElement('button');
-            exportBtn.textContent = 'Export';
-            exportBtn.className = 'export-btn';
-            exportBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.exportPlaylist(playlist.id);
-            });
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = 'Remove';
-            removeBtn.className = 'remove-btn';
-            removeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.removePlaylist(playlist.id);
-            });
-            li.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', li.dataset.index);
-                li.classList.add('dragging');
-            });
-            li.addEventListener('dragend', () => {
-                li.classList.remove('dragging');
-            });
-            li.addEventListener('dragover', (e) => {
-                e.preventDefault();
-            });
-            li.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-                const toIndex = parseInt(li.dataset.index);
-                if (fromIndex !== toIndex) {
-                    this.reorderPlaylists(fromIndex, toIndex);
-                }
-            });
+            if (!this.isSmallScreen) {
+                const exportBtn = document.createElement('button');
+                exportBtn.textContent = 'Export';
+                exportBtn.className = 'export-btn';
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.exportPlaylist(playlist.id);
+                });
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'Remove';
+                removeBtn.className = 'remove-btn';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.removePlaylist(playlist.id);
+                });
+                buttonGroup.appendChild(exportBtn);
+                buttonGroup.appendChild(removeBtn);
+            }
+            if (!this.isSmallScreen) {
+                li.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', li.dataset.index);
+                    li.classList.add('dragging');
+                });
+                li.addEventListener('dragend', () => {
+                    li.classList.remove('dragging');
+                });
+                li.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                li.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = parseInt(li.dataset.index);
+                    if (fromIndex !== toIndex) {
+                        this.reorderPlaylists(fromIndex, toIndex);
+                    }
+                });
+            }
             li.appendChild(span);
-            buttonGroup.appendChild(exportBtn);
-            buttonGroup.appendChild(removeBtn);
             li.appendChild(buttonGroup);
             this.playlistList.appendChild(li);
         });
@@ -879,8 +877,7 @@ class MusicPlayer {
     }
 
     reorderSongs(fromIndex, toIndex) {
-        if (this.isSmallScreen) return;
-        if (this.currentPlaylistId === 'home') return;
+        if (this.currentPlaylistId === 'home' && !this.isSmallScreen) return;
         const playlist = this.playlists.find(p => p.id === this.currentPlaylistId);
         if (!playlist) return;
         const [movedSong] = this.songs.splice(fromIndex, 1);
@@ -909,7 +906,7 @@ class MusicPlayer {
         this.songs.forEach((song, index) => {
             const songElement = document.createElement('div');
             songElement.className = 'song-item';
-            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
+            if (this.currentPlaylistId !== 'home' || this.isSmallScreen) {
                 songElement.setAttribute('draggable', true);
             }
             const artUrl = typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl);
@@ -956,7 +953,7 @@ class MusicPlayer {
                     this.play();
                 }
             });
-            if (!this.isSmallScreen && this.currentPlaylistId !== 'home') {
+            if (this.currentPlaylistId !== 'home' || this.isSmallScreen) {
                 songElement.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', index);
                     songElement.classList.add('dragging');
