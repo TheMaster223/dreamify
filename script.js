@@ -647,12 +647,16 @@ class MusicPlayer {
     }
 
     playNext() {
-        if (this.currentIndex < this.songs.length - 1) {
-            this.currentIndex++;
-            this.loadSong();
-            this.play();
+        if (this.songs.length === 0) return;
+
+        this.currentIndex++;
+        if (this.currentIndex >= this.songs.length) {
+            this.currentIndex = 0; // Loop back to start
         }
+        this.loadSong();
+        this.play();
     }
+
 
     play() {
         if (this.audio.src) {
