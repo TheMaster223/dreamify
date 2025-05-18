@@ -276,13 +276,13 @@ class MusicPlayer {
             const clearPlaylists = playlistStore.clear();
             const clearSongs = songStore.clear();
             Promise.all([
-                new Promise(r => { 
-                    clearPlaylists.onsuccess = () => r(); 
-                    clearPlaylists.onerror = () => reject(clearPlaylists.error); 
+                new Promise(r => {
+                    clearPlaylists.onsuccess = () => r();
+                    clearPlaylists.onerror = () => reject(clearPlaylists.error);
                 }),
-                new Promise(r => { 
-                    clearSongs.onsuccess = () => r(); 
-                    clearSongs.onerror = () => reject(clearSongs.error); 
+                new Promise(r => {
+                    clearSongs.onsuccess = () => r();
+                    clearSongs.onerror = () => reject(clearSongs.error);
                 })
             ]).then(() => {
                 this.playlists = [homePlaylist];
@@ -392,8 +392,8 @@ class MusicPlayer {
         }
         const transaction = this.db.transaction(['playlists', 'songs'], 'readonly');
         const playlistStore = transaction.objectStore('playlists');
-        const songStore = transaction.objectStore('songs');
         const playlistRequest = playlistStore.getAll();
+        const songStore = transaction.objectStore('songs');
         const songRequest = songStore.getAll();
         Promise.all([
             new Promise(r => { playlistRequest.onsuccess = () => r(playlistRequest.result); }),
@@ -571,7 +571,7 @@ class MusicPlayer {
                 });
             }).catch(err => {
                 console.error('Error reading playlist.csv:', err);
-                alert('Failed to read playlist.csv. Check console for details.');
+                alert('Failed to read playlists.csv. Check console for details.');
             });
         }).catch(err => {
             console.error('Error loading ZIP:', err);
@@ -658,6 +658,26 @@ class MusicPlayer {
                 if (this.isPlaying) {
                     this.audio.play().catch(err => console.error('Error playing audio after edit:', err));
                 }
+                // Update Media Session metadata
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: song.title,
+                        artist: song.artist,
+                        album: playlist.name,
+                        artwork: [
+                            {
+                                src: typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl),
+                                sizes: '96x96',
+                                type: 'image/jpeg'
+                            },
+                            {
+                                src: typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl),
+                                sizes: '128x128',
+                                type: 'image/jpeg'
+                            }
+                        ]
+                    });
+                }
             }
         }).catch(err => {
             console.error('Error editing song:', err);
@@ -716,6 +736,22 @@ class MusicPlayer {
                     }
                 });
             }
+        }
+
+        // Add Media Session action handlers
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', () => {
+                this.play();
+            });
+            navigator.mediaSession.setActionHandler('pause', () => {
+                this.togglePlayPause();
+            });
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                this.playPrevious();
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                this.playNext();
+            });
         }
     }
 
@@ -1040,10 +1076,41 @@ class MusicPlayer {
             this.isPlaying = false;
             this.currentSong = song;
             this.currentSongPlaylistId = this.currentPlaylistId;
+
+            // Set up Media Session metadata
+            if ('mediaSession' in navigator) {
+                const playlist = this.playlists.find(p => p.id === this.currentPlaylistId) || { name: 'Home' };
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: song.title,
+                    artist: song.artist,
+                    album: playlist.name,
+                    artwork: [
+                        {
+                            src: typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl),
+                            sizes: '96x96',
+                            type: 'image/jpeg'
+                        },
+                        {
+                            src: typeof song.artUrl === 'string' ? song.artUrl : URL.createObjectURL(song.artUrl),
+                            sizes: '128x128',
+                            type: 'image/jpeg'
+                        }
+                    ]
+                });
+                navigator.mediaSession.playbackState = 'paused';
+            }
         }
     }
 
     clearPlayer() {
+        if (this.currentSong) {
+            if (typeof this.currentSong.audioUrl !== 'string') {
+                URL.revokeObjectURL(this.audio.src);
+            }
+            if (typeof this.currentSong.artUrl !== 'string') {
+                URL.revokeObjectURL(this.currentArt.src);
+            }
+        }
         this.audio.src = '';
         this.currentArt.src = '';
         this.currentTitle.textContent = '';
@@ -1052,6 +1119,10 @@ class MusicPlayer {
         this.isPlaying = false;
         this.currentSong = null;
         this.currentSongPlaylistId = null;
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = null;
+            navigator.mediaSession.playbackState = 'none';
+        }
     }
 
     togglePlayPause() {
@@ -1059,9 +1130,15 @@ class MusicPlayer {
         if (this.isPlaying) {
             this.audio.pause();
             this.playPauseBtn.textContent = '▶️';
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
         } else {
             this.audio.play().catch(err => console.error('Error playing audio:', err));
             this.playPauseBtn.textContent = '⏸';
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
         }
         this.isPlaying = !this.isPlaying;
     }
@@ -1091,6 +1168,9 @@ class MusicPlayer {
             this.audio.play().catch(err => console.error('Error playing audio:', err));
             this.playPauseBtn.textContent = '⏸';
             this.isPlaying = true;
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
         }
     }
 
@@ -1103,6 +1183,13 @@ class MusicPlayer {
             this.progressBar.style.setProperty('--value', progress);
             this.currentTime.textContent = this.formatTime(current);
             this.duration.textContent = this.formatTime(duration);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setPositionState({
+                    duration: duration,
+                    playbackRate: this.audio.playbackRate,
+                    position: current
+                });
+            }
         }
     }
 
